@@ -128,3 +128,25 @@ btn.onclick = async () => {
     status.textContent = "No se pudo cargar el mapa. Comprueba los datos y la imagen de aerosoles.";
   }
 })();
+
+// ---- Grabación ----
+const recorder = new Tone.Recorder();
+Tone.getDestination().connect(recorder);
+let recording = false;
+const recBtn = document.getElementById("rec");
+
+recBtn.onclick = async () => {
+  if (!recording) {
+    recorder.start();
+    recording = true;
+    recBtn.textContent = "Detener y guardar";
+  } else {
+    const blob = await recorder.stop();
+    recording = false;
+    recBtn.textContent = "Grabar";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "musica-universalis-v1.webm";
+    a.click();
+  }
+};
