@@ -1,4 +1,5 @@
-import * as Tone from 'tone';
+// v1-calm: pentatónica justa (1, 9/8, 5/4, 3/2, 5/3), drone raíz+quinta+octava,
+// umbral 0.15, 70 BPM, reverb 9 s. Sin tensión ni resolución todavía.
 
 // ---- Afinación justa: raíz fija + razones puras (pentatónica) ----
 const ROOT = 146.83;                       // D3
@@ -90,8 +91,6 @@ function draw(c) {
 let started = false, playing = false;
 const btn = document.getElementById("play");
 const status = document.getElementById("status");
-btn.disabled = true;
-status.textContent = "Cargando mapa…";
 
 btn.onclick = async () => {
   if (!started) {
@@ -109,24 +108,11 @@ btn.onclick = async () => {
 };
 
 (async () => {
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/grid.json`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    grid = await response.json();
-    if (!Number.isInteger(grid.cols) || grid.cols < 2 || !Number.isInteger(grid.rows) || grid.rows < 1 || Object.keys(voices).some(name => !Array.isArray(grid.layers?.[name]) || grid.layers[name].length !== grid.rows || grid.layers[name].some(row => !Array.isArray(row) || row.length !== grid.cols || row.some(value => !Number.isFinite(value) || value < 0 || value > 1)))) throw new Error('Formato grid.json no válido');
-    img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new Error('No se pudo cargar aerosols.jpg'));
-      img.src = `${import.meta.env.BASE_URL}img/aerosols.jpg`;
-    });
-    draw(0);
-    btn.disabled = false;
-    status.textContent = "Mapa listo. Pulsa Escuchar.";
-  } catch (error) {
-    console.error(error);
-    status.textContent = "No se pudo cargar el mapa. Comprueba los datos y la imagen de aerosoles.";
-  }
+  grid = await (await fetch("data/grid.json")).json();
+  img = new Image();
+  img.onload = () => draw(0);
+  img.src = "img/aerosols.jpg";
+  draw(0);
 })();
 
 // ---- Grabación ----
@@ -136,6 +122,7 @@ let recording = false;
 const recBtn = document.getElementById("rec");
 
 recBtn.onclick = async () => {
+  if (!started) { status.textContent = "Pulsa Escuchar primero"; return; }
   if (!recording) {
     recorder.start();
     recording = true;
