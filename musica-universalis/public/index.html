@@ -8,16 +8,42 @@
     body{margin:0;background:#05070d;color:#e8ecf5;font-family:system-ui,sans-serif;text-align:center}
     canvas{width:100%;max-width:1100px;display:block;margin:1rem auto}
     button{font-size:1.2rem;padding:.8rem 1.6rem;border-radius:999px;border:0;cursor:pointer}
+    #solo{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:1rem}
+    #solo button{color:#05070d;font-weight:600}
+    #solo button[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
+    #mix{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin:1rem}
+    #mix label{display:flex;flex-direction:column;gap:.3rem;font-size:.95rem}
+    p{max-width:900px;margin:.6rem auto;padding:0 1rem}
   </style>
 </head>
 <body>
   <h1>Musica Universalis</h1>
   <canvas id="map" width="1920" height="1080" role="img"
           aria-label="Mapa de aerosoles de la Tierra, 19 de agosto de 2025"></canvas>
+
   <button id="play">Escuchar</button>
   <button id="rec">Grabar</button>
+  <button id="mode" aria-pressed="true">Audio: Espacial 3D</button>
+
+  <div id="solo" role="group" aria-label="Escuchar un solo tipo de aerosol">
+    <button data-sp="all" aria-pressed="true" style="background:#e8ecf5">Todo</button>
+    <button data-sp="seasalt" aria-pressed="false" style="background:#5aa9ff">Sal marina</button>
+    <button data-sp="dust" aria-pressed="false" style="background:#b98cff">Polvo</button>
+    <button data-sp="smoke" aria-pressed="false" style="background:#ff9a4a">Humo</button>
+    <button data-sp="sulfate" aria-pressed="false" style="background:#5fd68a">Sulfatos</button>
+  </div>
+
+  <div id="mix">
+    <label>Ritmo (bombo y hi-hats)
+      <input id="rhythm" type="range" min="0" max="100" value="50"></label>
+    <label>Entradas (drops)
+      <input id="drop" type="range" min="0" max="100" value="70"></label>
+  </div>
+
+  <p id="legend" aria-live="polite"></p>
   <p id="status" aria-live="polite"></p>
   <p id="info"></p>
+
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="app.js"></script>
 </body>

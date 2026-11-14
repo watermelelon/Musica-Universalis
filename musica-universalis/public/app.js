@@ -1,4 +1,4 @@
-// v4: sintetizadores + estructura tipo DJ (calma → build-up → corte → entrada → decaimiento)
+// v7: escenario estable + solo por especie + controles de Ritmo y Entradas + fases explicadas
 
 // ---- Raíz: el año terrestre llevado 32 octavas arriba (~136.10 Hz) ----
 const EARTH_YEAR_S = 365.256 * 86400;
@@ -6,14 +6,21 @@ const ROOT = (1 / EARTH_YEAR_S) * 2 ** 32;
 const KEPLER_EARTH = 16 / 15;
 const KEPLER_SUSPENSION = true;
 
-// ---- Ajustes (aquí afinas el carácter) ----
-const BPM = 106;
-const HIT_COUNT = 6;        // máximo de entradas por barrido
-const MIN_GAP = 10;         // columnas mínimas entre entradas
-const TIER_GROOVE = 0.30;   // por encima: entra el ritmo suave
-const TIER_FULL = 0.60;     // por encima: ritmo completo
+// ---- Ajustes ----
+const BPM = 108;
+const HIT_COUNT = 6;
+const MIN_GAP = 10;
+const TIER_GROOVE = 0.30;
+const TIER_FULL = 0.60;
+const SPATIAL_BOOST = 1.3;
+const MOTION = 0.3;          // 0 = escenario totalmente fijo; 1 = deriva grande (mareante)
+const SOLO_BACKING = 0.35;   // volumen de ritmo y drone cuando haces solo de una especie
+const ENERGY_W = { seasalt: 1, dust: 1, smoke: 1, sulfate: 1 };  // peso de cada especie en la energía
 const VOL = { pad: -16, arp: -14, bells: -18, bass: -10, stab: -14,
               kick: -6, hat: -26, snare: -18, crash: -22, riser: -26, drone: -24 };
+
+let RHYTHM = 0.5;   // 0 = sin bombo ni hi-hats; 1 = completos
+let DROP = 0.7;     // 0 = sin entradas (riser, crash, acorde, caja, corte); 1 = completas
 
 Tone.Transport.bpm.value = BPM;
 
@@ -33,27 +40,58 @@ const limiter = new Tone.Limiter(-1).toDestination();
 const master = new Tone.Compressor(-20, 3).connect(limiter);
 const reverb = new Tone.Reverb({ decay: 8, wet: 1 }).connect(master);
 
-// Un bus por especie (cada uno con su propio paneo, listo para pasar a 3D)
-function makeBus(send, pump) {
+// ---- Un bus por especie: estéreo y 3D en paralelo, solo uno suena a la vez ----
+let spatialMode = true;
+
+function makeBus(send, cfg) {
   const input = new Tone.Gain(1);
-  const pumpGain = new Tone.Gain(1);
-  const pan = new Tone.Panner(0);
+  const soloGain = new Tone.Gain(1);     // para los botones de solo
+  const pumpGain = new Tone.Gain(1);     // para el sidechain
+  const stereo = new Tone.Panner(cfg.pan);
+  const spatial = new Tone.Panner3D({
+    panningModel: "HRTF", distanceModel: "inverse",
+    refDistance: 1, rolloffFactor: 0.12,
+    positionX: cfg.x, positionY: cfg.y, positionZ: cfg.z,
+  });
+  const outStereo = new Tone.Gain(spatialMode ? 0 : 1);
+  const outSpatial = new Tone.Gain(spatialMode ? SPATIAL_BOOST : 0);
   const sendGain = new Tone.Gain(send);
-  input.chain(pumpGain, pan, master);
-  pan.connect(sendGain);
+
+  input.chain(soloGain, pumpGain);
+  pumpGain.connect(stereo);  stereo.connect(outStereo);
+  pumpGain.connect(spatial); spatial.connect(outSpatial);
+  outStereo.connect(master);  outSpatial.connect(master);
+  outStereo.connect(sendGain); outSpatial.connect(sendGain);
   sendGain.connect(reverb);
-  return { input, pumpGain, pan };
+
+  return { input, soloGain, pumpGain, stereo, spatial, outStereo, outSpatial, cfg };
 }
+
+// ESCENARIO FIJO (metros: x = izquierda(-)/derecha(+), y = abajo(-)/arriba(+), z = frente (-))
+//   pan:   posición en modo estéreo (-1 izquierda, +1 derecha)
+//   drift: cuánto se desplaza con la longitud (se multiplica por MOTION)
 const buses = {
-  seasalt: makeBus(0.55),
-  dust:    makeBus(0.35),
-  smoke:   makeBus(0.15),
-  sulfate: makeBus(0.60),
-  drums:   makeBus(0.12),
-  drone:   makeBus(0.40),
+  // CENTRO: la base, no pertenece a ninguna especie
+  drums:   makeBus(0.12, { x: 0,    y: 0,    z: -2,   pan: 0,     drift: 0 }),
+  drone:   makeBus(0.40, { x: 0,    y: -1.5, z: -3,   pan: 0,     drift: 0 }),
+  // CENTRO-ABAJO: el humo, grave y estable
+  smoke:   makeBus(0.15, { x: 0,    y: -2.5, z: -1.5, pan: 0,     drift: 1 }),
+  // LADOS: las dos especies de registro medio
+  seasalt: makeBus(0.55, { x: -4.5, y: 0.5,  z: -4,   pan: -0.65, drift: 3 }),
+  dust:    makeBus(0.35, { x: 4.5,  y: 0.5,  z: -3.5, pan: 0.65,  drift: 3 }),
+  // ARRIBA: las campanas
+  sulfate: makeBus(0.60, { x: -1.5, y: 3,    z: -3,   pan: -0.2,  drift: 2 }),
 };
 
-// ---- SAL MARINA: pad espacial (registro medio, sonido ancho y lento) ----
+// La longitud solo da una deriva suave; el lugar base no cambia
+function place(bus, lon, time) {
+  const c = bus.cfg;
+  const pan = Math.max(-1, Math.min(1, c.pan + lon * c.drift * MOTION * 0.15));
+  bus.stereo.pan.rampTo(pan, 0.6, time);
+  bus.spatial.positionX.rampTo(c.x + lon * c.drift * MOTION, 0.6, time);
+}
+
+// ---- SAL MARINA: pad espacial ----
 const padFilter = new Tone.Filter(600, "lowpass");
 const chorus = new Tone.Chorus(3, 3.5, 0.6).start();
 const pad = new Tone.PolySynth(Tone.Synth, {
@@ -63,7 +101,7 @@ const pad = new Tone.PolySynth(Tone.Synth, {
 pad.volume.value = VOL.pad;
 pad.chain(padFilter, chorus, buses.seasalt.input);
 
-// ---- POLVO: arpegio pwm con eco ping-pong (registro medio-agudo, rítmico) ----
+// ---- POLVO: arpegio pwm con eco ping-pong ----
 const arpDelay = new Tone.PingPongDelay("8n.", 0.35);
 arpDelay.wet.value = 0.35;
 const arpFilter = new Tone.Filter(3200, "lowpass");
@@ -74,7 +112,7 @@ const arp = new Tone.PolySynth(Tone.Synth, {
 arp.volume.value = VOL.arp;
 arp.chain(arpFilter, arpDelay, buses.dust.input);
 
-// ---- SULFATOS: campanas FM (registro muy agudo, escasas y brillantes) ----
+// ---- SULFATOS: campanas FM ----
 const bells = new Tone.PolySynth(Tone.FMSynth, {
   harmonicity: 3.01, modulationIndex: 6,
   envelope: { attack: 0.01, decay: 1.4, sustain: 0, release: 2.5 },
@@ -82,7 +120,7 @@ const bells = new Tone.PolySynth(Tone.FMSynth, {
 bells.volume.value = VOL.bells;
 bells.connect(buses.sulfate.input);
 
-// ---- HUMO: bajo de sierra con filtro (registro grave) ----
+// ---- HUMO: bajo de sierra con filtro ----
 const bass = new Tone.MonoSynth({
   oscillator: { type: "sawtooth" },
   envelope: { attack: 0.01, decay: 0.25, sustain: 0.4, release: 0.3 },
@@ -92,7 +130,7 @@ const bass = new Tone.MonoSynth({
 bass.volume.value = VOL.bass;
 bass.connect(buses.smoke.input);
 
-// ---- Percusión y efectos (centro, no pertenecen a ninguna especie) ----
+// ---- Percusión y efectos (centro) ----
 const kick = new Tone.MembraneSynth({
   pitchDecay: 0.04, octaves: 6,
   envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.1 },
@@ -128,7 +166,7 @@ const riser = new Tone.Noise("pink");
 riser.volume.value = VOL.riser;
 riser.chain(riserFilter, riserGain, buses.drums.input);
 
-// ---- Drone: raíz, quinta (3:2) y octava; su volumen respira con la energía ----
+// ---- Drone: raíz, quinta (3:2) y octava ----
 let droneGain;
 function startDrone() {
   droneGain = new Tone.Gain(0.6).connect(buses.drone.input);
@@ -144,15 +182,17 @@ function startDrone() {
 
 // ---- Sidechain: los pads se agachan con cada bombo ----
 function duck(time) {
+  const depth = 1 - 0.7 * Math.min(1, RHYTHM * 1.4);   // con menos ritmo, menos "bombeo"
   for (const b of [buses.seasalt, buses.dust, buses.drone]) {
     const g = b.pumpGain.gain;
     g.cancelScheduledValues(time);
-    g.setValueAtTime(0.3, time);
+    g.setValueAtTime(depth, time);
     g.linearRampToValueAtTime(1, time + 0.28);
   }
 }
 function kickHit(time, vel) {
-  kick.triggerAttackRelease(ROOT / 4, "8n", time, vel);
+  if (RHYTHM < 0.03) return;
+  kick.triggerAttackRelease(ROOT / 4, "8n", time, Math.min(1, vel * RHYTHM * 1.6));
   duck(time);
 }
 
@@ -188,7 +228,7 @@ function computeEnergy() {
         colSum += v;
         if (v > mx) mx = v;
       }
-      sum += colSum;
+      sum += colSum * (ENERGY_W[name] ?? 1);
       if (mx > 0.15) n++;
     }
     dens.push(sum);
@@ -208,7 +248,6 @@ function computeEnergy() {
   });
 }
 
-// Entradas = picos locales de energía, separados al menos MIN_GAP columnas
 function findHits() {
   const sorted = [...E].sort((a, b) => a - b);
   for (const pct of [0.7, 0.5, 0.3]) {
@@ -239,7 +278,6 @@ function buildLevels() {
   const lo = sorted[Math.floor(0.1 * (sorted.length - 1))];
   const hi = sorted[Math.floor(0.9 * (sorted.length - 1))];
   const span = (hi - lo) || 1;
-  // energía base estirada por percentiles: así siempre hay contraste
   level = E.map(e => 0.08 + 0.6 * Math.min(1, Math.max(0, (e - lo) / span)));
   buildDist = new Map();
   for (const h of hits) {
@@ -248,7 +286,7 @@ function buildLevels() {
       const i = (h + k) % grid.cols;
       level[i] = Math.max(level[i], 1 - 0.13 * k);
     }
-    const prep = { 3: 0.35, 2: 0.45, 1: 0.2 };   // distancia a la entrada → nivel
+    const prep = { 3: 0.35, 2: 0.45, 1: 0.2 };
     for (const j of [3, 2, 1]) {
       const i = (h - j + grid.cols) % grid.cols;
       level[i] = prep[j];
@@ -257,11 +295,12 @@ function buildLevels() {
   }
 }
 
-// ---- Momentos especiales ----
+// ---- Momentos especiales (escalan con el control "Entradas") ----
 function startRiser(time, beat) {
+  if (DROP < 0.03) return;
   riserGain.gain.cancelScheduledValues(time);
   riserGain.gain.setValueAtTime(0, time);
-  riserGain.gain.linearRampToValueAtTime(1, time + beat * 3);
+  riserGain.gain.linearRampToValueAtTime(DROP, time + beat * 3);
   riserFilter.frequency.cancelScheduledValues(time);
   riserFilter.frequency.setValueAtTime(300, time);
   riserFilter.frequency.exponentialRampToValueAtTime(6000, time + beat * 3);
@@ -270,12 +309,14 @@ function startRiser(time, beat) {
 function hitMoment(time, beat) {
   riserGain.gain.cancelScheduledValues(time);
   riserGain.gain.setValueAtTime(0, time);
-  crash.triggerAttackRelease("2n", time, 0.8);
-  stab.triggerAttackRelease([ROOT * 2, ROOT * 2 * 5 / 4, ROOT * 2 * 3 / 2, ROOT * 4], "2n", time, 0.8);
-  bass.triggerAttackRelease(ROOT / 2, "2n", time, 1);
+  if (DROP < 0.03) return;
+  const v = DROP;
+  crash.triggerAttackRelease("2n", time, 0.8 * v);
+  stab.triggerAttackRelease([ROOT * 2, ROOT * 2 * 5 / 4, ROOT * 2 * 3 / 2, ROOT * 4], "2n", time, 0.8 * v);
+  bass.triggerAttackRelease(ROOT / 2, "2n", time, v);
   if (KEPLER_SUSPENSION) {
-    bells.triggerAttackRelease(ROOT * 4 * KEPLER_EARTH, "8n", time, 0.5);   // Fa (16:15)
-    bells.triggerAttackRelease(ROOT * 4, "4n", time + beat, 0.5);           // resuelve a Mi (1:1)
+    bells.triggerAttackRelease(ROOT * 4 * KEPLER_EARTH, "8n", time, 0.5 * v);   // Fa (16:15)
+    bells.triggerAttackRelease(ROOT * 4, "4n", time + beat, 0.5 * v);           // resuelve a Mi (1:1)
   }
 }
 
@@ -295,7 +336,7 @@ function playPad(c, L, time) {
   const f = ROOT * (num / den);
   lastLabel = `${num}:${den}`;
   const chord = [f, f * 3 / 2, f * 2];
-  if (L >= 0.5) chord.push(f * 5 / 4 * 2);   // color mayor cuando hay energía
+  if (L >= 0.5) chord.push(f * 5 / 4 * 2);
   pad.triggerAttackRelease(chord, "1m", time, 0.5);
 }
 
@@ -307,20 +348,19 @@ function tick(time) {
   const c = Math.floor(tickIdx / 4) % grid.cols;
   tickIdx++;
 
+  const lon = (c / (grid.cols - 1)) * 2 - 1;
   const L = level[c];
-  const k = buildDist.get(c) || 0;       // 3, 2, 1 = distancia a la entrada
-  const isHit = hits.has(c);
-  const cut = k === 1;
+  const dropOn = DROP >= 0.03;
+  const k = dropOn ? (buildDist.get(c) || 0) : 0;   // 3, 2, 1 = distancia a la entrada
+  const isHit = dropOn && hits.has(c);
+  const cut = k === 1 && DROP >= 0.3;
+  const building = k > 0;
   const groove = L >= TIER_GROOVE;
   const full = L >= TIER_FULL;
   const beat = Tone.Time("4n").toSeconds();
 
   if (step === 0) {
-    const p = (c / (grid.cols - 1)) * 1.8 - 0.9;     // longitud → izquierda/derecha
-    buses.seasalt.pan.pan.setValueAtTime(p, time);
-    buses.dust.pan.pan.setValueAtTime(p, time);
-    buses.sulfate.pan.pan.setValueAtTime(p, time);
-    buses.smoke.pan.pan.setValueAtTime(p * 0.3, time);
+    for (const n of NAMES) place(buses[n], lon, time);   // solo una deriva suave
     padFilter.frequency.rampTo(300 + 3700 * L, 0.5, time);
     droneGain.gain.rampTo(0.4 + 1.2 * L, 0.6, time);
     if (k === 3) startRiser(time, beat);
@@ -328,19 +368,21 @@ function tick(time) {
     if (c % 4 === 0 && !cut) playPad(c, L, time);
   }
 
-  // Build-up: redoble de caja que se intensifica y corte final
-  if (k === 3 && (step === 0 || step === 2)) snare.triggerAttackRelease("16n", time, 0.35);
-  if (k === 2) snare.triggerAttackRelease("16n", time, 0.35 + 0.1 * step);
-  if (k === 1 && step >= 2) snare.triggerAttackRelease("16n", time, 0.6 + 0.15 * (step - 2));
+  // Build-up: solo redoble de caja que crece (el ritmo se retira)
+  if (k === 3 && (step === 0 || step === 2)) snare.triggerAttackRelease("16n", time, 0.35 * DROP);
+  if (k === 2) snare.triggerAttackRelease("16n", time, (0.35 + 0.1 * step) * DROP);
+  if (k === 1 && step >= 2) snare.triggerAttackRelease("16n", time, (0.6 + 0.15 * (step - 2)) * DROP);
 
   if (!cut) {
-    // Batería según el nivel de energía
-    if (step === 0 && (full || (groove && c % 2 === 0))) kickHit(time, full ? 1 : 0.6);
-    if (groove && step === 2) hat.triggerAttackRelease("32n", time, full ? 0.5 : 0.3);
-    if (full && (step === 1 || step === 3) && Math.random() < 0.6)
-      hat.triggerAttackRelease("32n", time, 0.2);
+    // Ritmo: sigue la energía y se silencia durante el build-up
+    if (!building && RHYTHM >= 0.03) {
+      if (step === 0 && (full || (groove && c % 2 === 0))) kickHit(time, full ? 1 : 0.6);
+      if (full && step === 2) hat.triggerAttackRelease("32n", time, 0.4 * RHYTHM);
+      if (full && (step === 1 || step === 3) && Math.random() < 0.4)
+        hat.triggerAttackRelease("32n", time, 0.2 * RHYTHM);
+    }
 
-    // HUMO → bajo (solo suena donde hay humo)
+    // HUMO -> bajo
     const sm = tops.smoke[c][0];
     if (sm && groove && !(isHit && step === 0) && (step === 0 || (full && step === 3))) {
       const n = pick(sm.row / grid.rows, -1, 1);
@@ -348,7 +390,7 @@ function tick(time) {
       bass.triggerAttackRelease(n.f, "8n", time, 0.5 + 0.4 * sm.val);
     }
 
-    // POLVO → arpegio (los datos eligen las notas; la energía, cuántas suenan)
+    // POLVO -> arpegio
     const notes = tops.dust[c];
     const active = full ? true : groove ? step % 2 === 0 : step === 0;
     if (notes.length && active && Math.random() < 0.3 + 0.7 * L) {
@@ -358,7 +400,7 @@ function tick(time) {
       arp.triggerAttackRelease(f.f, "16n", time, Math.min(0.9, 0.25 + 0.5 * L * n.val));
     }
 
-    // SULFATOS → campanas en el contratiempo
+    // SULFATOS -> campanas
     const bl = tops.sulfate[c];
     if (bl.length && step === 2 && Math.random() < 0.35 + 0.5 * bl[0].val) {
       const f = pick(bl[0].row / grid.rows, 2, 2);
@@ -368,7 +410,7 @@ function tick(time) {
   }
 
   if (step === 0) {
-    const phase = isHit ? "¡Entrada!" : cut ? "Corte" : k ? "Build-up"
+    const phase = isHit ? "¡Entrada!" : cut ? "Corte" : building ? "Build-up"
                 : full ? "Pleno" : groove ? "Ritmo" : "Calma";
     Tone.Draw.schedule(() => draw(c, L, isHit, phase), time);
   }
@@ -379,6 +421,15 @@ const cv = document.getElementById("map");
 const ctx = cv.getContext("2d");
 const info = document.getElementById("info");
 
+const PHASE_TXT = {
+  "Calma": "Calma: poco aerosol. Suenan el drone y las especies presentes.",
+  "Ritmo": "Ritmo suave: la densidad de aerosol sube y entra el bombo.",
+  "Pleno": "Pleno: mucho aerosol y varias especies mezcladas.",
+  "Build-up": "Build-up: el aire se espesa hacia un pico de densidad; el ritmo se retira.",
+  "Corte": "Corte: silencio justo antes del pico.",
+  "¡Entrada!": "¡Entrada! Pico de densidad del mapa; resuelve con 16:15 → 1:1.",
+};
+
 function draw(c, L = 0, hit = false, phase = "Calma") {
   ctx.clearRect(0, 0, cv.width, cv.height);
   if (img && img.complete) ctx.drawImage(img, 0, 0, cv.width, cv.height);
@@ -386,8 +437,56 @@ function draw(c, L = 0, hit = false, phase = "Calma") {
   ctx.fillStyle = hit ? "rgba(255,210,90,.95)" : "rgba(255,255,255,.85)";
   ctx.fillRect(x - 2, 0, hit ? 8 : 4, cv.height);
   if (info) info.textContent =
-    `${phase} · energía ${Math.round(L * 100)}% · último intervalo ${lastLabel}`;
+    `${PHASE_TXT[phase]} · energía ${Math.round(L * 100)}% · último intervalo ${lastLabel}`;
 }
+
+// ---- Interruptor Estéreo / Espacial ----
+const modeBtn = document.getElementById("mode");
+function applyMode() {
+  for (const b of Object.values(buses)) {
+    b.outStereo.gain.rampTo(spatialMode ? 0 : 1, 0.3);
+    b.outSpatial.gain.rampTo(spatialMode ? SPATIAL_BOOST : 0, 0.3);
+  }
+  if (modeBtn) {
+    modeBtn.textContent = spatialMode ? "Audio: Espacial 3D" : "Audio: Estéreo";
+    modeBtn.setAttribute("aria-pressed", String(spatialMode));
+  }
+}
+if (modeBtn) modeBtn.onclick = () => { spatialMode = !spatialMode; applyMode(); };
+
+// ---- Solo por especie ----
+let soloSpecies = null;
+const DESC = {
+  all: "Todo: centro = ritmo y drone · izquierda = sal marina · derecha = polvo · arriba = sulfatos · abajo = humo.",
+  seasalt: "Sal marina (azul): pad espacial de acordes largos, a tu izquierda. Suena donde hay sal marina en el mapa.",
+  dust: "Polvo (violeta): arpegio con eco, a tu derecha. Suena donde hay polvo, como el del Sahara.",
+  smoke: "Humo (naranja): bajo grave, abajo y al centro. Solo suena donde hay humo de incendios.",
+  sulfate: "Sulfatos (verde): campanas brillantes, arriba. Aparecen donde hay contaminación o penachos volcánicos.",
+};
+const legend = document.getElementById("legend");
+const soloBtns = document.querySelectorAll("#solo button");
+
+function applySolo() {
+  for (const n of NAMES)
+    buses[n].soloGain.gain.rampTo(!soloSpecies || soloSpecies === n ? 1 : 0, 0.25);
+  for (const n of ["drums", "drone"])
+    buses[n].soloGain.gain.rampTo(soloSpecies ? SOLO_BACKING : 1, 0.25);
+  soloBtns.forEach(b => {
+    const on = (b.dataset.sp === "all" && !soloSpecies) || b.dataset.sp === soloSpecies;
+    b.setAttribute("aria-pressed", String(on));
+  });
+  if (legend) legend.textContent = DESC[soloSpecies || "all"];
+}
+soloBtns.forEach(b => b.onclick = () => {
+  soloSpecies = b.dataset.sp === "all" ? null : b.dataset.sp;
+  applySolo();
+});
+
+// ---- Controles de mezcla ----
+const rhythmEl = document.getElementById("rhythm");
+const dropEl = document.getElementById("drop");
+if (rhythmEl) { RHYTHM = rhythmEl.value / 100; rhythmEl.oninput = () => { RHYTHM = rhythmEl.value / 100; }; }
+if (dropEl)   { DROP = dropEl.value / 100;     dropEl.oninput   = () => { DROP = dropEl.value / 100; }; }
 
 // ---- Arranque ----
 let started = false, playing = false;
@@ -419,12 +518,14 @@ btn.onclick = async () => {
     computeEnergy();
     findHits();
     buildLevels();
+    applyMode();
+    applySolo();
     img = new Image();
     img.onload = () => draw(0, level[0]);
     img.src = "img/aerosols.jpg";
     draw(0, level[0]);
     btn.disabled = false;
-    status.textContent = "Mapa listo. Pulsa Escuchar.";
+    status.textContent = "Mapa listo. Usa audífonos y pulsa Escuchar.";
   } catch (e) {
     console.error(e);
     status.textContent = "No se pudo cargar el mapa (revisa data/grid.json e img/aerosols.jpg).";
@@ -449,7 +550,7 @@ recBtn.onclick = async () => {
     recBtn.textContent = "Grabar";
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "musica-universalis-v4.webm";
+    a.download = "musica-universalis-v7.webm";
     a.click();
   }
 };
