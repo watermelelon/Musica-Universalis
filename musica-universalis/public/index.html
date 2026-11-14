@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musica Universalis</title>
+  <style>
+    body{margin:0;background:#05070d;color:#e8ecf5;font-family:system-ui,sans-serif;text-align:center}
+    canvas{width:100%;max-width:1100px;display:block;margin:1rem auto}
+    button{font-size:1.2rem;padding:.8rem 1.6rem;border-radius:999px;border:0;cursor:pointer}
+  </style>
+</head>
+<body>
+  <h1>Musica Universalis</h1>
+  <canvas id="map" width="1920" height="1080" role="img"
+          aria-label="Mapa de aerosoles de la Tierra, 19 de agosto de 2025"></canvas>
+  <button id="play">Escuchar</button>
+  <p id="status" aria-live="polite"></p>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
