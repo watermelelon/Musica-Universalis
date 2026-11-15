@@ -1,55 +1,625 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Musica Universalis</title>
-  <style>
-    body{margin:0;background:#05070d;color:#e8ecf5;font-family:system-ui,sans-serif;text-align:center}
-    canvas{width:100%;max-width:1100px;display:block;margin:1rem auto}
-    button{font-size:1.2rem;padding:.8rem 1.6rem;border-radius:999px;border:0;cursor:pointer}
-    #solo{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:1rem}
-    #solo button{color:#05070d;font-weight:600}
-    #solo button[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
-    #mix{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin:1rem}
-    #mix label{display:flex;flex-direction:column;gap:.3rem;font-size:.95rem}
-    p{max-width:900px;margin:.6rem auto;padding:0 1rem}
-  </style>
-</head>
-<body>
-  <h1>Musica Universalis</h1>
-  <canvas id="map" width="1920" height="1080" role="img"
-          aria-label="Mapa de aerosoles de la Tierra, 19 de agosto de 2025"></canvas>
-
-  <button id="play">Escuchar</button>
-  <button id="rec">Grabar</button>
-  <button id="mode" aria-pressed="true">Audio: Espacial 3D</button>
-
-  <div id="solo" role="group" aria-label="Escuchar un solo tipo de aerosol">
-    <button data-sp="all" aria-pressed="true" style="background:#e8ecf5">Todo</button>
-    <button data-sp="seasalt" aria-pressed="false" style="background:#5aa9ff">Sal marina</button>
-    <button data-sp="dust" aria-pressed="false" style="background:#b98cff">Polvo</button>
-    <button data-sp="smoke" aria-pressed="false" style="background:#ff9a4a">Humo</button>
-    <button data-sp="sulfate" aria-pressed="false" style="background:#5fd68a">Sulfatos</button>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800;900&display=swap"><title>Musica Universalis · Listen to Earth</title><style>
+:root{color-scheme:dark;--bg:#08090e;--surface:#10121b;--text:#f2f0fa;--muted:#bdc4d5;--line:#8791a8;--accent:#ddd2ff;--ink:#211a36;--dust:#d1adff;--seasalt:#99caff;--smoke:#ffbe91;--sulfate:#a4e0b8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:1rem/1.65 system-ui,sans-serif}button,input,summary{font:inherit}button,a,summary,input{touch-action:manipulation}button{min-height:48px;padding:.65rem 1.25rem;border:1px solid var(--line);border-radius:999px;color:var(--text);background:transparent;cursor:pointer;white-space:normal}button:hover{background:#252333}button:disabled{opacity:.6;cursor:wait}.primary{background:var(--accent);color:var(--ink);border-color:var(--accent);font-weight:650}.primary:hover{background:#eee7ff}.quiet{border-color:transparent;color:var(--muted)}a{color:var(--accent);text-underline-offset:4px}a:hover{text-decoration-thickness:2px}button:focus-visible,summary:focus-visible,input:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid #fff;outline-offset:5px;box-shadow:0 0 0 7px #4a326c}h1:focus,h2:focus{outline:0}h1{font-size:clamp(2rem,4vw,3.2rem);font-weight:500;line-height:1.18;letter-spacing:-.035em;text-wrap:balance;margin:0 0 1rem}h2{font-size:1.5rem;line-height:1.3;font-weight:550;margin:0 0 .75rem}p{margin:.75rem 0;color:var(--muted)}[hidden]{display:none!important}svg{display:block;max-width:100%}input[type=range]{width:100%;min-width:0;min-height:44px;accent-color:var(--accent)}input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}summary{cursor:pointer;min-height:48px;padding:.65rem .5rem;list-style:none;color:var(--text)}summary::-webkit-details-marker{display:none}.chevron{display:inline-block;margin-right:.45rem;font-size:1.2em}details[open]>summary .chevron{transform:rotate(90deg)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip-link{position:absolute;top:8px;left:12px;transform:translateY(-160%);z-index:5;padding:12px;background:var(--surface)}.skip-link:focus{transform:none}.shell{width:min(100% - 48px,1040px);margin-inline:auto;position:relative;z-index:1;min-width:0}.sky{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 85% 20%,#49366222,transparent 55%);z-index:0}.sky:before,.sky:after{content:"";position:absolute;inset:0;opacity:.28;background-image:radial-gradient(circle,#bfc5e3 1px,transparent 1.5px);background-size:173px 137px}.sky:after{background-size:271px 193px;background-position:80px 30px;opacity:.17}.content-shade{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 48%,#08090ef5 10%,#08090eb0 55%,transparent);pointer-events:none}.utility{display:flex;justify-content:flex-end;align-items:flex-start;gap:.5rem;flex-wrap:wrap;padding-top:20px;min-height:80px}.utility details{max-width:100%;width:205px}.utility details[open]{width:min(100%,340px);background:var(--surface);padding:0 18px 18px;border:1px solid var(--line);border-radius:18px}.utility summary{text-align:center}.settings{display:grid;gap:1rem}.settings label{display:block}.settings output{float:right}.settings button{width:100%}.settings .note{margin:0}.utility #global-state{flex-basis:100%;font-size:.85rem;text-align:right;margin:0}.welcome{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(2rem,7vw,6rem);padding:70px 0 60px}.welcome-title{font-size:clamp(2.5rem,5vw,4.4rem);max-width:9ch;line-height:1.06}.welcome-lead p{font-size:1.15rem;max-width:25ch}.eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:#c4b5e1}.welcome-player{text-align:center;min-width:0}.orbital-wrap{position:relative;width:218px;max-width:100%;margin:0 auto 1.25rem;padding:20px}.orbit{position:absolute;inset:3px;border:1px solid #a597c9;border-radius:50%;transform:rotate(-25deg) scaleY(.65);pointer-events:none}.orbit.two{transform:rotate(40deg) scaleY(.8);border-color:#6e6681}.orbit:after{content:"";position:absolute;top:8%;left:20%;width:8px;height:8px;border-radius:50%;background:var(--accent)}.orbital{position:relative;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;border:2px solid #b6a5d6;width:174px;max-width:100%;aspect-ratio:1;border-radius:50%;padding:22px;background:#15121e;font-size:.9rem;line-height:1.4;color:var(--text)}.orbital:hover{background:#262035}.play-glyph{font-size:2.1rem;line-height:1}.orbital[aria-pressed=true]{outline:2px solid #f2f0fa;outline-offset:7px}.welcome-actions,.actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.welcome-actions{margin-top:22px}.welcome-actions button{flex:1 1 140px}.transcript{margin:14px auto 0;text-align:left}.transcript summary{text-align:center;color:var(--muted)}.transcript p{font-size:1rem;border-top:1px solid #616879;padding-top:16px}.progress-row{display:flex;gap:12px;align-items:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;margin:10px 0}progress{width:100%;height:7px;accent-color:var(--accent)}progress::-webkit-progress-bar{background:#3b3b49;border-radius:4px}progress::-webkit-progress-value{background:var(--accent);border-radius:4px}.progress-row span{white-space:nowrap}.audio-status{font-size:.9rem}.audio-status:empty{display:none}.step-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid #4c5263;padding:18px 0}.step-top p{margin:0;color:var(--muted)}.stage{padding:8px 0 24px}.stage-content{text-align:center;padding:36px 0 12px}.stage-content>p,.stage-content>.note{max-width:680px;margin-inline:auto}.stage-nav{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:28px 0;border-top:1px solid #4c5263;margin-top:24px}.stage-nav button{min-width:116px}.note{font-size:.92rem;line-height:1.65}.volume-control{max-width:380px;margin:24px auto;text-align:left}.volume-control label{display:flex;justify-content:space-between;gap:16px;color:var(--text)}.slider-row{display:flex;align-items:center;gap:12px}.slider-row svg{width:24px;flex-shrink:0;color:var(--muted)}.test-player{margin-top:30px}.test-player .orbital-wrap{margin-bottom:0}.particle-selectors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:32px 0 24px}.particle-selector{border-radius:18px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;background:#0b0d14}.particle-selector svg{width:52px;height:52px}.selection-marker{font-size:.75rem;min-height:1.3em;color:var(--text)}.particle-selector[aria-pressed=true],.voice-control[aria-pressed=true]{outline:2px solid var(--text);outline-offset:3px;background:#211d2d}.dust{--particle:var(--dust)}.seasalt{--particle:var(--seasalt)}.smoke{--particle:var(--smoke)}.sulfate{--particle:var(--sulfate)}.particle-icon{color:var(--particle)}.explanation{max-width:720px;margin:0 auto;text-align:left;padding:22px 0}.explanation-heading{display:flex;align-items:center;gap:18px}.explanation-heading svg{width:64px;height:64px;flex:none}.explanation h2{margin:0}.explanation .actions{justify-content:flex-start;margin:20px 0}.science-note{border-top:1px solid #4c5263;padding-top:20px;text-align:left;max-width:720px;margin:16px auto}.sound-stage{display:grid;grid-template-columns:1fr 220px 1fr;grid-template-rows:auto auto auto;gap:16px;align-items:center;max-width:850px;margin:26px auto}.voice-control{display:flex;flex-direction:column;gap:6px;align-items:center;padding:14px;border-radius:18px;min-width:0;background:#0b0d14}.voice-control svg{width:34px;height:34px}.voice-control small{font-size:.85rem;color:var(--muted)}.voice-control.sulfate{grid-column:1;grid-row:1}.voice-control.seasalt{grid-column:1;grid-row:2}.voice-control.dust{grid-column:3;grid-row:2}.voice-control.smoke{grid-column:2;grid-row:3}.listener{grid-column:2;grid-row:1 / 3;align-self:center;position:relative}.listener svg{width:100%;height:auto}.listener .direction-dot{fill:var(--bg);stroke:#b5a8cc;stroke-width:2}.listener .direction-dot.active{fill:var(--accent);stroke:#fff;stroke-width:4}.listener figcaption{font-size:.8rem;color:var(--muted);margin-top:10px}.listener{margin:0}.sound-info{max-width:700px;margin:12px auto;min-width:0}.sound-info h2{font-size:1.2rem}.sound-info p{margin:6px 0}.playback-controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px 0}.switch{display:flex;align-items:center;justify-content:center;gap:12px;min-height:48px;margin:20px 0}.direction-note{color:var(--text)!important;font-size:1.05rem}.footer{border-top:1px solid #4c5263;padding:26px 0 32px;font-size:.8rem;text-align:center;margin-top:20px}.footer a{display:inline-block;padding:6px}.map-shell{background:#080d16;border:1px solid #586174;border-radius:18px;text-align:center;overflow:hidden}.map-shell canvas{width:100%;height:auto;display:block}.transport,#solo{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:16px}.map-shell p{padding:0 16px}#mix{display:flex;gap:20px;flex-wrap:wrap;padding:16px}#mix label{flex:1 1 180px;min-width:0;display:flex;flex-direction:column;text-align:left}#experience{padding:30px 0}#mu-tools{padding:16px}#mu-tools label{display:inline-block;max-width:100%}#mu-tools input{max-width:100%}.map-shell details{padding:16px}.intro{margin-bottom:20px}
+@media(max-width:780px){.welcome{grid-template-columns:1fr;gap:36px;padding:30px 0}.welcome-lead{text-align:center}.welcome-title{max-width:none;font-size:2.8rem}.welcome-lead p{margin-inline:auto;max-width:none}.welcome-player{max-width:480px;width:100%;margin:auto}.sound-stage{grid-template-columns:1fr 180px 1fr;gap:12px}}
+@media(max-width:620px){.shell{width:calc(100% - 32px)}.utility{justify-content:center}.utility #global-state{text-align:center}.utility details{width:auto}.utility details[open]{width:100%}.welcome-title{font-size:2.3rem}.particle-selectors{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.sound-stage{display:flex;flex-direction:column;gap:12px}.listener{order:-1;width:180px;max-width:100%;margin:0 auto 12px}.voice-control{width:100%;display:grid;grid-template-columns:40px 1fr;gap:4px 14px;text-align:left;justify-items:start}.voice-control svg{grid-row:1 / 4}.voice-control small,.voice-control .selection-marker{grid-column:2}.stage-content{padding-top:28px}.explanation-heading svg{width:48px;height:48px}.step-top{gap:6px}.stage-nav{gap:12px}.stage-nav button{min-width:0;flex:1}.welcome-actions button{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media(forced-colors:active){button,.orbital,.particle-selector,.voice-control{border-color:ButtonText}.particle-selector[aria-pressed=true],.voice-control[aria-pressed=true]{outline-color:Highlight}.sky,.content-shade,.orbit{display:none}.listener .direction-dot.active{fill:Highlight}}
+/* SPACE THEME — edit the palette and optional background here. */
+:root {
+  --bg:#000; --surface:#090b0d; --text:#f3f7f5; --muted:#c0cac7;
+  --line:#788982; --accent:#b6ff69; --ink:#071005;
+  --dust:#c59aff; --seasalt:#6ee7ff; --smoke:#ffad73; --sulfate:#a2ff70;
+}
+body { background:#000; }
+.sky {
+  background:
+    linear-gradient(#000b,#000b),
+    url("img/galaxy-background.jpg") center / cover no-repeat;
+  background-color:#000;
+}
+.sky:before { opacity:.24; background-size:233px 191px; }
+.sky:after { opacity:.15; background-size:347px 277px; }
+.content-shade {
+  background:radial-gradient(ellipse at 82% 40%,#56298522,transparent 40%),
+    radial-gradient(ellipse at 3% 90%,#4a8c2922,transparent 45%),
+    linear-gradient(90deg,#000e 0%,#000c 50%,#000b 100%);
+}
+.shell { max-width:1080px; }
+.utility { border-bottom:1px solid #303b35; padding-bottom:16px; gap:12px; }
+.utility button,.utility summary { font-size:.9rem; }
+.utility #global-state { font-size:.8rem; }
+.utility details[open] { border-radius:12px; background:#080b09; }
+button { border-radius:8px; background:#050806; border-color:var(--line); }
+button:hover { background:#152019; border-color:#b6ff69; }
+button.primary { background:var(--accent);color:var(--ink);border-color:var(--accent); }
+button.primary:hover { background:#d0ff9d; }
+button:focus-visible,summary:focus-visible,input:focus-visible,a:focus-visible {
+  outline:3px solid #fff;outline-offset:5px;box-shadow:0 0 0 7px #271a3b;
+}
+.welcome { gap:70px; padding:72px 0 64px; }
+.welcome-title { font-size:clamp(2.5rem,5vw,3.7rem); max-width:10ch; letter-spacing:-.045em; font-weight:550; }
+.welcome-lead .eyebrow { font-size:.76rem;letter-spacing:.19em;color:var(--sulfate);margin-bottom:26px; }
+.welcome-lead>p:last-of-type { color:var(--text);font-size:1.25rem;max-width:22ch; }
+.spectrum { display:flex;gap:8px;margin:32px 0 0; }
+.spectrum span { width:34px;height:3px;border-radius:3px;background:var(--color); }
+.orbital-wrap { width:270px;padding:36px;isolation:isolate; }
+.orbital-wrap:before {
+  content:"";position:absolute;inset:20px;border-radius:50%;z-index:-1;
+  background:radial-gradient(circle,#8c43dc22,transparent 70%);
+  box-shadow:0 0 75px #9264ff16;
+}
+.orbital { width:198px;background:radial-gradient(circle at 35% 25%,#21162f,#040506 75%);border:1px solid var(--dust);border-radius:50%;color:var(--text); }
+.orbital:hover { background:#171020;border-color:#e0c6ff; }
+.play-glyph { color:var(--dust); }
+.orbit { inset:0;border-color:var(--seasalt);transform:rotate(-28deg) scaleY(.5);opacity:.8; }
+.orbit.two { border-color:var(--sulfate);transform:rotate(36deg) scaleY(.65);opacity:.65; }
+.orbit:after { background:var(--smoke);width:6px;height:6px;box-shadow:0 0 10px #ffad7355; }
+.welcome-actions { margin-top:28px;gap:12px; }
+.progress-row { margin-top:22px; }
+.transcript summary { font-size:.9rem; }
+.step-top,.stage-nav,.science-note,.footer { border-color:#39433d; }
+#stage-progress { color:var(--sulfate);letter-spacing:.1em;text-transform:uppercase;font-size:.8rem; }
+.stage-content { padding-top:46px; }
+.stage-content h1 { font-size:clamp(2rem,4vw,2.7rem); }
+.particle-selector,.voice-control { background:#050706;border-radius:12px; }
+.particle-selector { border-top:3px solid var(--particle); }
+.particle-selector[aria-pressed=true],.voice-control[aria-pressed=true] {
+  background:#0e1511;outline:2px solid #fff;outline-offset:4px;border-color:var(--particle);
+}
+.particle-selector:hover,.voice-control:hover { border-color:var(--particle);background:#101510; }
+.particle-icon { filter:drop-shadow(0 0 8px #ffffff10); }
+.explanation { border-left:2px solid var(--dust);padding-left:24px; }
+.listener { padding:12px;background:radial-gradient(circle,#291a3c44,transparent 70%); }
+.direction-note { border-left:3px solid var(--sulfate);padding:12px 18px;background:#070d08; }
+.footer { font-size:.82rem;padding-top:26px; }
+.footer a { color:var(--muted); }
+@media(max-width:780px) {
+  .welcome { grid-template-columns:1fr;gap:36px;padding:40px 0; }
+  .welcome-title { max-width:none;font-size:clamp(2.3rem,8vw,3.4rem); }
+  .welcome-lead>p:last-of-type { max-width:none; }
+  .spectrum { justify-content:center;margin-top:22px; }
+}
+@media(max-width:620px) {
+  .utility { gap:4px; }
+  .orbital-wrap { width:246px;padding:30px; }
+  .orbital { width:186px; }
+  .explanation { padding-left:16px; }
+}
+@media(forced-colors:active) {
+  .spectrum,.orbital-wrap:before { display:none; }
+  .particle-selector,.voice-control,.orbital { border-color:ButtonText; }
+}
+/* HERO HIERARCHY + MATCHING AUDIO CONTROLS */
+.welcome-title { font-weight:850;letter-spacing:-.055em;line-height:1.02;font-size:clamp(2.7rem,5.4vw,4.2rem); }
+.welcome-lead .eyebrow { font-size:.72rem;letter-spacing:.16em;margin-bottom:20px; }
+.welcome-lead>p:last-of-type { font-size:1.15rem;color:var(--muted);margin-top:24px; }
+.orbital-wrap { width:100%;max-width:320px;padding:0;margin:0 auto 24px; }
+.orbit,.orbital-wrap:before { display:none; }
+.orbital { width:100%;max-width:none;aspect-ratio:auto;min-height:176px;padding:28px 24px;gap:18px;border:1px solid #819588;border-radius:16px;background:linear-gradient(145deg,#0c1510,#030604);font-size:1rem;font-weight:600; }
+.orbital:hover { border-color:var(--accent);background:#101b12; }
+.orbital .play-glyph { display:grid;place-items:center;width:60px;height:60px;border-radius:50%;background:var(--accent);color:var(--ink);font-size:1.5rem;box-shadow:0 0 28px #b6ff6918; }
+.orbital[aria-pressed=true] { border-color:var(--accent);outline:2px solid #f3f7f5;outline-offset:5px; }
+.orbital[aria-pressed=true] .play-glyph { background:var(--dust); }
+.test-player .orbital-wrap { max-width:300px; }
+.entry-dialog { color:var(--text);background:#070a08;border:1px solid #819588;border-radius:22px;padding:clamp(24px,5vw,44px);width:min(480px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;text-align:center;box-shadow:0 28px 100px #000b; }
+.entry-dialog::backdrop { background:#000e;backdrop-filter:blur(8px); }
+.entry-dialog .headphone-emblem { width:76px;height:76px;display:grid;place-items:center;margin:0 auto 24px;border:1px solid #788982;border-radius:50%;background:#101a12;color:var(--accent); }
+.headphone-emblem svg { width:40px;height:40px; }
+.entry-dialog h2 { font-size:clamp(1.65rem,5vw,2rem);font-weight:750;letter-spacing:-.035em; }
+.entry-dialog p { line-height:1.65; }
+.entry-dialog .entry-actions { display:grid;gap:12px;margin-top:26px; }
+.entry-dialog .note { font-size:.85rem;margin:20px 0 0; }
+@media(max-width:620px) { .welcome-title { font-size:clamp(2.5rem,10vw,3.3rem); }.orbital-wrap { padding:0;width:100%; }.orbital { width:100%; } }
+@media(forced-colors:active) { .entry-dialog,.orbital,.headphone-emblem { border-color:ButtonText; }.orbital .play-glyph { background:ButtonFace;color:ButtonText;border:1px solid ButtonText; } }
+/* COMPACT HERO PLAYER AND AUDIO MENU */
+.entry-dialog::backdrop { background:linear-gradient(125deg,#0006,#15102288 50%,#0005);backdrop-filter:blur(2px); }
+.welcome { grid-template-columns:1.15fr 1fr;gap:56px; }
+.welcome-title { font-weight:900;font-size:clamp(3rem,6.3vw,5rem);max-width:10ch;line-height:1;letter-spacing:-.055em; }
+.welcome-lead>p:last-of-type { font-size:1.1rem;margin-top:24px;color:var(--muted); }
+.utility { border:0;min-height:76px;padding:20px 0 0;justify-content:flex-end;z-index:4; }
+.utility details,.utility details[open] { position:relative;width:52px;max-width:none;border:0;border-radius:50%;background:transparent;padding:0; }
+.utility summary { width:52px;height:52px;min-height:52px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;padding:0;background:#090d0b; }
+.utility summary:hover { border-color:var(--accent);color:var(--accent); }
+.utility .settings { position:absolute;right:0;top:66px;width:min(320px,calc(100vw - 32px));background:#090e0b;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 18px 60px #0009;max-height:calc(100dvh - 110px);overflow:auto; }
+.utility #global-state { margin:0; }
+.intro-player-row { display:flex;align-items:center;gap:22px;text-align:left; }
+.intro-circle { border:1px solid var(--accent);border-radius:50%;width:112px;height:112px;min-width:112px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--accent);background:#081008; }
+.intro-circle svg { width:40px;height:40px; }
+.intro-circle:hover { background:#162315; }
+.intro-circle[aria-pressed=true] { outline:2px solid #fff;outline-offset:5px; }
+.intro-track { flex:1;min-width:0; }
+#narration-label { font-size:1rem;font-weight:550; }
+#voice-wave { display:block;width:100%;height:52px;color:var(--accent);margin-top:8px; }
+.progress-row { margin:4px 0 0;font-size:.8rem;gap:10px;flex-wrap:wrap; }
+.progress-row progress { flex:1;min-width:40px;height:3px; }
+.welcome-actions { display:flex;flex-direction:column;align-items:stretch;margin-top:36px;gap:12px; }
+.welcome-actions button { flex:none; }
+#start-experience { display:flex;align-items:center;justify-content:space-between;padding:16px 24px;font-weight:700; }
+#start-experience span { font-size:1.4rem; }
+#skip-intro { align-self:center;border-color:transparent;background:none;color:var(--muted);font-size:.9rem;text-decoration:underline;text-underline-offset:5px;padding:10px 20px; }
+#skip-intro:hover { color:var(--text); }
+.transcript { margin-top:8px; }
+@media(max-width:780px) { .welcome { grid-template-columns:1fr;gap:40px; }.welcome-title { max-width:none;font-size:clamp(2.7rem,9vw,4.5rem); } }
+@media(max-width:420px) { .intro-player-row { gap:14px; }.intro-circle { width:88px;min-width:88px;height:88px;padding:14px; }.intro-circle svg { width:32px;height:32px; } }
+/* FUTURISTIC HERO + PAGE NARRATION */
+.welcome-title { font-family:'Orbitron','Arial Black',system-ui,sans-serif;font-weight:900;font-size:clamp(2.7rem,5.8vw,4.5rem);letter-spacing:-.045em;max-width:none;overflow-wrap:anywhere;text-wrap:initial; }
+.welcome-lead>p:last-of-type { color:var(--accent);font-size:1.08rem;letter-spacing:.035em; }
+#intro-progress { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
+.progress-row { justify-content:flex-end; }
+.secondary-actions { display:flex;justify-content:center;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:14px; }
+.secondary-actions .transcript { margin:0;flex:1;min-width:160px; }
+.secondary-actions #skip-intro { align-self:flex-start;white-space:nowrap;padding-top:.65rem; }
+.secondary-actions summary { font-size:.9rem; }
+.step-top { display:flex;align-items:center;gap:14px;position:relative;z-index:4; }
+.step-top>p { margin-right:auto; }
+#guide-settings-slot.utility { padding:0;min-height:0;width:52px;flex:none; }
+#stage-skip span { display:inline-block;transition:transform .15s; }
+#stage-skip:hover span,#stage-skip:focus-visible span { transform:translate(2px,-2px); }
+.stage-nav { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+.stage-nav button { width:100%;min-height:60px; }
+.test-player { display:flex;align-items:center;flex-direction:column;gap:12px;margin-top:28px; }
+.test-circle { width:112px;height:112px;border:0;border-radius:50%;background:var(--accent);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:22px; }
+.test-circle:hover { background:#d2ffa3;color:#071005;border:0; }
+.test-circle svg { width:44px;height:44px; }
+.test-circle[aria-pressed=true] { outline:2px solid #fff;outline-offset:6px; }
+#test-label { margin:0;color:var(--text); }
+.guide-narration { display:flex;justify-content:center;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:18px auto 24px;max-width:720px; }
+.guide-narration>button { font-size:.9rem; }
+.guide-narration details { max-width:100%;font-size:.9rem; }
+.guide-narration details[open] { flex-basis:100%;text-align:left; }
+@media(max-width:780px) { .welcome-title { font-size:clamp(2.2rem,7.8vw,4rem); } }
+@media(max-width:420px) { .step-top { gap:6px; }.step-top>p { flex-basis:100%; }#stage-skip { margin-right:auto; }.stage-nav { gap:10px; } }
+/* ROUNDED CONTROLS + QUIET STARLIGHT */
+button,.particle-selector,.voice-control,.orbital { border-radius:999px; }
+button { transition:background-color .18s,border-color .18s,box-shadow .18s; }
+.primary:hover { box-shadow:0 0 30px #b6ff6922; }
+.intro-circle:hover { box-shadow:0 0 34px #b6ff691e; }
+.guide-narration { align-items:center;flex-direction:column; }
+.guide-voice-control { display:flex;flex-direction:column;align-items:center;gap:12px; }
+#guide-voice-label { color:var(--muted);font-size:.9rem; }
+.guide-narration details[open] { flex-basis:auto;width:100%; }
+.stars { position:fixed;inset:0;pointer-events:none;z-index:0;mask-image:radial-gradient(ellipse at center,transparent 20%,#000 85%); }
+.stars i { position:absolute;left:var(--x);top:var(--y);width:2px;height:2px;border-radius:50%;background:#e6f8ff;opacity:.3;box-shadow:0 0 6px #b6ff6944;animation:starlight var(--duration) ease-in-out var(--delay) infinite alternate; }
+@keyframes starlight { from { opacity:.15; } to { opacity:.65; } }
+.stars-paused .stars i { animation-play-state:paused; }
+#star-motion { font-size:.8rem;margin-top:10px; }
+@media(prefers-reduced-motion:reduce) { .stars i { animation:none!important;opacity:.3; }button { transition:none; } }
+@media(forced-colors:active) { .stars { display:none; } }
+/* COMPACT HORIZONTAL GUIDE AUDIO */
+.guide-narration { display:flex;flex-direction:row;justify-content:center;align-items:center;gap:12px 24px;margin:16px auto 24px; }
+.guide-voice-control { flex-direction:row;gap:12px; }
+#guide-narration-play.intro-circle { width:48px;min-width:48px;height:48px;min-height:48px;padding:10px;border-radius:50%;gap:0;position:relative; }
+#guide-narration-play svg { width:24px;height:24px; }
+#guide-voice-icon { position:absolute;right:-3px;bottom:-3px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.65rem;background:var(--accent);color:var(--ink);border:2px solid #000; }
+#guide-voice-label { font-size:.9rem;color:var(--text); }
+.guide-narration details { margin:0; }
+.guide-narration summary { padding:.65rem 0; }
+.guide-narration details[open] { flex-basis:100%;width:100%; }
+.guide-narration details[open] summary { text-align:center; }
+#guide-transcript { text-align:left;max-width:680px;margin:12px auto; }
+.stars i { width:var(--size,2px);height:var(--size,2px); }
+.stars i:nth-child(3n+1),.stars i:nth-child(3n+2) { animation:none;opacity:.35; }
+.stars { mask-image:radial-gradient(ellipse at center,#0002 10%,#0007 50%,#000 85%); }
+@media(max-width:420px) { .guide-narration { gap:8px 16px; }.guide-voice-control { gap:9px; } }
+</style></head><body>
+<dialog class="entry-dialog" id="headphone-welcome" aria-labelledby="headphone-title" aria-describedby="headphone-description">
+  <div class="headphone-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 27v-5a16 16 0 0 1 32 0v5"/><rect x="6" y="24" width="8" height="15" rx="4"/><rect x="34" y="24" width="8" height="15" rx="4"/></svg></div>
+  <h2 id="headphone-title">A little closer to Earth.</h2>
+  <p id="headphone-description">This experience is best enjoyed with headphones. Put yours on, settle in, and discover a different way to listen.</p>
+  <div class="entry-actions">
+    <button class="primary" id="enter-with-music" autofocus>Enter with ambient music</button>
+    <button id="enter-quietly">Enter without music</button>
   </div>
-
-  <div id="mix">
-    <label>Ritmo (bombo y hi-hats)
-      <input id="rhythm" type="range" min="0" max="100" value="50"></label>
-    <label>Entradas (drops)
-      <input id="drop" type="range" min="0" max="100" value="70"></label>
-  
-    <label>Contraste de volumen (poco ↔ mucho aerosol)
-  <input id="dyn" type="range" min="0" max="100" value="70"></label>
-  
+  <p class="note">Headphones are optional. You can change the volume or stop audio at any time.</p>
+</dialog>
+<script>
+// Show the welcome dialog before the audio engine or map data loads.
+if (typeof document.getElementById('headphone-welcome').showModal === 'function') {
+  document.getElementById('headphone-welcome').showModal();
+}
+</script>
+<div class="sky" aria-hidden="true"></div><div class="content-shade" aria-hidden="true"></div><div class="stars" aria-hidden="true"><i style="--x:30.08%;--y:47.57%;--size:2.5px;--delay:-1.9s;--duration:5.9s"></i><i style="--x:70.13%;--y:79.98%;--size:1px;--delay:-11.0s;--duration:8.7s"></i><i style="--x:9.50%;--y:4.63%;--size:2.5px;--delay:-8.2s;--duration:5.8s"></i><i style="--x:54.38%;--y:49.49%;--size:2.5px;--delay:-9.9s;--duration:8.6s"></i><i style="--x:33.65%;--y:85.18%;--size:1px;--delay:-4.4s;--duration:6.8s"></i><i style="--x:62.88%;--y:54.48%;--size:2.5px;--delay:-5.1s;--duration:6.8s"></i><i style="--x:55.51%;--y:77.12%;--size:1.5px;--delay:-10.7s;--duration:6.8s"></i><i style="--x:94.28%;--y:80.87%;--size:1px;--delay:-8.9s;--duration:9.1s"></i><i style="--x:9.60%;--y:40.73%;--size:1px;--delay:-5.3s;--duration:9.8s"></i><i style="--x:96.59%;--y:74.15%;--size:1px;--delay:-2.8s;--duration:5.6s"></i><i style="--x:30.94%;--y:61.88%;--size:2.5px;--delay:-4.2s;--duration:5.0s"></i><i style="--x:26.30%;--y:31.24%;--size:1.5px;--delay:-10.1s;--duration:9.7s"></i><i style="--x:57.84%;--y:68.82%;--size:1.5px;--delay:-1.8s;--duration:8.9s"></i><i style="--x:54.23%;--y:32.89%;--size:1.5px;--delay:-1.5s;--duration:9.1s"></i><i style="--x:45.93%;--y:60.69%;--size:1.5px;--delay:-6.6s;--duration:5.6s"></i><i style="--x:88.04%;--y:96.63%;--size:2.5px;--delay:-4.6s;--duration:5.6s"></i><i style="--x:5.57%;--y:44.47%;--size:1px;--delay:-2.6s;--duration:7.8s"></i><i style="--x:78.83%;--y:26.01%;--size:2px;--delay:-10.6s;--duration:9.9s"></i><i style="--x:95.25%;--y:27.96%;--size:1px;--delay:-9.1s;--duration:5.1s"></i><i style="--x:67.35%;--y:10.37%;--size:1px;--delay:-6.6s;--duration:9.7s"></i><i style="--x:60.46%;--y:60.42%;--size:1.5px;--delay:-1.6s;--duration:7.2s"></i><i style="--x:36.21%;--y:92.24%;--size:1px;--delay:-4.8s;--duration:8.1s"></i><i style="--x:2.25%;--y:23.67%;--size:1px;--delay:-6.3s;--duration:5.6s"></i><i style="--x:36.30%;--y:22.55%;--size:2.5px;--delay:-4.2s;--duration:7.5s"></i><i style="--x:74.75%;--y:78.69%;--size:1px;--delay:-4.9s;--duration:8.8s"></i><i style="--x:49.30%;--y:75.47%;--size:2px;--delay:-3.1s;--duration:6.0s"></i><i style="--x:23.68%;--y:27.28%;--size:1px;--delay:-3.3s;--duration:6.8s"></i><i style="--x:81.75%;--y:16.21%;--size:1px;--delay:-1.0s;--duration:6.7s"></i><i style="--x:29.12%;--y:49.35%;--size:2px;--delay:-8.2s;--duration:5.3s"></i><i style="--x:45.33%;--y:93.27%;--size:2.5px;--delay:-1.9s;--duration:10.0s"></i><i style="--x:83.01%;--y:59.94%;--size:2px;--delay:-6.9s;--duration:6.7s"></i><i style="--x:73.02%;--y:75.12%;--size:2.5px;--delay:-7.5s;--duration:6.6s"></i><i style="--x:21.98%;--y:37.34%;--size:2px;--delay:-3.7s;--duration:9.9s"></i><i style="--x:4.51%;--y:53.78%;--size:2.5px;--delay:-11.6s;--duration:8.1s"></i><i style="--x:91.99%;--y:43.95%;--size:1px;--delay:-9.5s;--duration:7.7s"></i><i style="--x:24.44%;--y:16.94%;--size:1px;--delay:-4.8s;--duration:6.7s"></i><i style="--x:9.14%;--y:24.83%;--size:1.5px;--delay:-0.5s;--duration:9.4s"></i><i style="--x:74.26%;--y:31.89%;--size:1px;--delay:-8.8s;--duration:9.0s"></i><i style="--x:14.58%;--y:45.24%;--size:2.5px;--delay:-1.2s;--duration:8.1s"></i><i style="--x:21.71%;--y:9.88%;--size:1.5px;--delay:-11.8s;--duration:6.9s"></i><i style="--x:15.20%;--y:77.48%;--size:1.5px;--delay:-5.9s;--duration:7.8s"></i><i style="--x:32.39%;--y:12.80%;--size:1px;--delay:-5.3s;--duration:7.8s"></i><i style="--x:91.35%;--y:98.99%;--size:2.5px;--delay:-1.9s;--duration:7.1s"></i><i style="--x:10.96%;--y:8.79%;--size:1.5px;--delay:-1.4s;--duration:7.5s"></i><i style="--x:37.06%;--y:20.59%;--size:1.5px;--delay:-8.3s;--duration:5.9s"></i><i style="--x:10.23%;--y:91.22%;--size:2px;--delay:-10.5s;--duration:5.3s"></i><i style="--x:90.26%;--y:34.75%;--size:2.5px;--delay:-11.9s;--duration:6.9s"></i><i style="--x:73.22%;--y:15.01%;--size:1.5px;--delay:-11.6s;--duration:5.2s"></i><i style="--x:90.70%;--y:93.73%;--size:1.5px;--delay:-9.8s;--duration:9.6s"></i><i style="--x:70.01%;--y:90.09%;--size:1px;--delay:-6.2s;--duration:5.6s"></i><i style="--x:66.27%;--y:49.00%;--size:2.5px;--delay:-0.6s;--duration:5.8s"></i><i style="--x:15.97%;--y:40.95%;--size:1.5px;--delay:-8.5s;--duration:9.4s"></i><i style="--x:11.33%;--y:81.44%;--size:1.5px;--delay:-2.2s;--duration:5.4s"></i><i style="--x:77.73%;--y:18.54%;--size:1.5px;--delay:-11.2s;--duration:7.7s"></i><i style="--x:60.20%;--y:68.81%;--size:1.5px;--delay:-8.2s;--duration:9.3s"></i><i style="--x:86.95%;--y:92.64%;--size:1px;--delay:-8.9s;--duration:7.6s"></i><i style="--x:1.62%;--y:60.98%;--size:2.5px;--delay:-5.9s;--duration:5.5s"></i><i style="--x:67.04%;--y:40.48%;--size:1px;--delay:-6.8s;--duration:5.8s"></i><i style="--x:68.04%;--y:96.15%;--size:2px;--delay:-1.5s;--duration:7.3s"></i><i style="--x:34.51%;--y:81.66%;--size:1px;--delay:-10.2s;--duration:10.0s"></i><i style="--x:85.81%;--y:22.40%;--size:1px;--delay:-2.2s;--duration:5.5s"></i><i style="--x:80.04%;--y:3.91%;--size:1px;--delay:-6.8s;--duration:9.3s"></i><i style="--x:54.24%;--y:26.30%;--size:1px;--delay:-6.6s;--duration:7.5s"></i><i style="--x:87.75%;--y:33.23%;--size:1px;--delay:-5.0s;--duration:7.7s"></i><i style="--x:98.50%;--y:66.61%;--size:1px;--delay:-5.8s;--duration:8.6s"></i><i style="--x:48.91%;--y:59.84%;--size:2.5px;--delay:-6.0s;--duration:9.5s"></i><i style="--x:91.32%;--y:22.10%;--size:1.5px;--delay:-6.8s;--duration:6.2s"></i><i style="--x:78.54%;--y:49.08%;--size:1px;--delay:-7.2s;--duration:6.3s"></i><i style="--x:61.56%;--y:74.98%;--size:1.5px;--delay:-4.2s;--duration:5.6s"></i><i style="--x:73.73%;--y:5.16%;--size:1px;--delay:-7.9s;--duration:9.0s"></i><i style="--x:91.17%;--y:2.21%;--size:1px;--delay:-11.5s;--duration:7.0s"></i><i style="--x:66.78%;--y:60.61%;--size:1.5px;--delay:-7.6s;--duration:7.3s"></i><i style="--x:16.01%;--y:56.04%;--size:2px;--delay:-5.3s;--duration:7.3s"></i><i style="--x:56.64%;--y:48.64%;--size:1px;--delay:-0.5s;--duration:9.5s"></i><i style="--x:17.46%;--y:14.07%;--size:2px;--delay:-10.9s;--duration:6.5s"></i><i style="--x:47.98%;--y:13.04%;--size:1px;--delay:-5.2s;--duration:9.8s"></i><i style="--x:36.95%;--y:40.37%;--size:1px;--delay:-10.3s;--duration:9.4s"></i><i style="--x:12.32%;--y:38.35%;--size:2px;--delay:-10.0s;--duration:6.9s"></i><i style="--x:54.90%;--y:66.91%;--size:1.5px;--delay:-5.3s;--duration:6.0s"></i><i style="--x:16.52%;--y:12.26%;--size:1px;--delay:-8.9s;--duration:5.2s"></i><i style="--x:86.50%;--y:7.81%;--size:1px;--delay:-7.7s;--duration:6.5s"></i><i style="--x:94.58%;--y:61.46%;--size:1px;--delay:-9.4s;--duration:5.7s"></i><i style="--x:92.14%;--y:47.86%;--size:2px;--delay:-1.8s;--duration:7.3s"></i><i style="--x:60.25%;--y:71.31%;--size:1px;--delay:-4.0s;--duration:7.1s"></i><i style="--x:50.33%;--y:82.99%;--size:1px;--delay:-2.5s;--duration:6.8s"></i><i style="--x:63.16%;--y:84.98%;--size:2.5px;--delay:-3.9s;--duration:7.6s"></i><i style="--x:12.53%;--y:71.46%;--size:1px;--delay:-1.3s;--duration:9.5s"></i><i style="--x:18.45%;--y:17.19%;--size:1px;--delay:-2.2s;--duration:7.6s"></i><i style="--x:34.84%;--y:31.31%;--size:1px;--delay:-8.9s;--duration:6.5s"></i><i style="--x:40.94%;--y:93.18%;--size:2px;--delay:-5.4s;--duration:5.0s"></i><i style="--x:62.15%;--y:27.86%;--size:2.5px;--delay:-9.7s;--duration:6.2s"></i><i style="--x:32.85%;--y:48.28%;--size:1.5px;--delay:-8.7s;--duration:7.7s"></i><i style="--x:44.66%;--y:19.87%;--size:2.5px;--delay:-5.5s;--duration:7.9s"></i><i style="--x:5.42%;--y:99.23%;--size:1px;--delay:-7.7s;--duration:6.6s"></i><i style="--x:34.28%;--y:12.97%;--size:1px;--delay:-10.4s;--duration:9.0s"></i><i style="--x:81.46%;--y:97.37%;--size:2px;--delay:-5.5s;--duration:9.9s"></i><i style="--x:16.18%;--y:39.37%;--size:1.5px;--delay:-10.9s;--duration:6.0s"></i><i style="--x:62.95%;--y:43.87%;--size:1.5px;--delay:-6.8s;--duration:7.0s"></i><i style="--x:30.32%;--y:97.46%;--size:2.5px;--delay:-6.9s;--duration:5.4s"></i><i style="--x:51.23%;--y:6.33%;--size:1.5px;--delay:-4.1s;--duration:9.4s"></i><i style="--x:66.75%;--y:88.36%;--size:2px;--delay:-2.3s;--duration:7.1s"></i><i style="--x:72.30%;--y:35.72%;--size:2.5px;--delay:-3.8s;--duration:8.4s"></i><i style="--x:22.92%;--y:53.09%;--size:2px;--delay:-7.6s;--duration:7.9s"></i><i style="--x:93.59%;--y:9.84%;--size:2.5px;--delay:-11.4s;--duration:7.4s"></i><i style="--x:24.46%;--y:11.00%;--size:2.5px;--delay:-0.4s;--duration:7.7s"></i><i style="--x:5.27%;--y:72.20%;--size:1.5px;--delay:-3.4s;--duration:6.3s"></i><i style="--x:21.55%;--y:44.22%;--size:1.5px;--delay:-8.2s;--duration:9.0s"></i><i style="--x:5.12%;--y:63.37%;--size:1.5px;--delay:-8.1s;--duration:7.8s"></i><i style="--x:37.19%;--y:20.22%;--size:1px;--delay:-0.7s;--duration:8.5s"></i><i style="--x:73.34%;--y:91.73%;--size:2px;--delay:-0.1s;--duration:8.2s"></i><i style="--x:83.02%;--y:92.73%;--size:1.5px;--delay:-11.6s;--duration:7.5s"></i><i style="--x:99.46%;--y:99.64%;--size:1px;--delay:-7.9s;--duration:7.4s"></i><i style="--x:29.54%;--y:2.72%;--size:1.5px;--delay:-7.2s;--duration:5.6s"></i><i style="--x:41.45%;--y:36.58%;--size:1px;--delay:-0.4s;--duration:8.8s"></i><i style="--x:18.50%;--y:81.12%;--size:1px;--delay:-9.2s;--duration:7.9s"></i><i style="--x:18.56%;--y:90.43%;--size:1px;--delay:-9.8s;--duration:7.5s"></i><i style="--x:52.70%;--y:95.24%;--size:1px;--delay:-8.8s;--duration:7.8s"></i><i style="--x:98.87%;--y:17.79%;--size:1.5px;--delay:-5.6s;--duration:6.7s"></i><i style="--x:54.35%;--y:7.65%;--size:2px;--delay:-4.9s;--duration:6.9s"></i><i style="--x:72.42%;--y:89.35%;--size:2.5px;--delay:-2.9s;--duration:8.4s"></i><i style="--x:27.01%;--y:0.76%;--size:2px;--delay:-10.7s;--duration:5.0s"></i><i style="--x:74.08%;--y:9.24%;--size:1px;--delay:-11.0s;--duration:7.1s"></i><i style="--x:35.57%;--y:67.93%;--size:1.5px;--delay:-1.7s;--duration:5.7s"></i><i style="--x:64.47%;--y:58.94%;--size:1px;--delay:-5.7s;--duration:7.2s"></i><i style="--x:11.65%;--y:1.34%;--size:2px;--delay:-3.3s;--duration:9.1s"></i><i style="--x:42.99%;--y:51.48%;--size:2.5px;--delay:-3.1s;--duration:5.4s"></i><i style="--x:19.35%;--y:53.61%;--size:1.5px;--delay:-9.2s;--duration:7.2s"></i><i style="--x:98.37%;--y:38.82%;--size:1.5px;--delay:-4.4s;--duration:9.5s"></i><i style="--x:41.05%;--y:69.44%;--size:1.5px;--delay:-11.5s;--duration:7.3s"></i><i style="--x:81.40%;--y:22.09%;--size:1px;--delay:-10.0s;--duration:9.0s"></i><i style="--x:22.19%;--y:36.13%;--size:1px;--delay:-1.1s;--duration:7.0s"></i><i style="--x:13.40%;--y:87.30%;--size:2px;--delay:-8.1s;--duration:9.7s"></i><i style="--x:97.01%;--y:84.64%;--size:1.5px;--delay:-2.3s;--duration:6.8s"></i><i style="--x:21.37%;--y:1.37%;--size:2.5px;--delay:-7.4s;--duration:5.1s"></i><i style="--x:79.42%;--y:20.71%;--size:1.5px;--delay:-8.1s;--duration:8.0s"></i><i style="--x:86.35%;--y:7.86%;--size:1px;--delay:-11.7s;--duration:8.9s"></i><i style="--x:63.25%;--y:61.78%;--size:2.5px;--delay:-8.4s;--duration:7.0s"></i><i style="--x:22.96%;--y:4.44%;--size:2px;--delay:-0.6s;--duration:5.2s"></i><i style="--x:44.52%;--y:79.67%;--size:1px;--delay:-7.9s;--duration:8.3s"></i><i style="--x:97.02%;--y:5.47%;--size:2px;--delay:-3.6s;--duration:5.9s"></i><i style="--x:20.88%;--y:37.77%;--size:2px;--delay:-9.7s;--duration:6.0s"></i><i style="--x:58.17%;--y:90.26%;--size:2.5px;--delay:-10.3s;--duration:7.0s"></i><i style="--x:85.10%;--y:64.16%;--size:1.5px;--delay:-7.3s;--duration:5.5s"></i><i style="--x:95.66%;--y:4.14%;--size:2px;--delay:-2.3s;--duration:9.6s"></i><i style="--x:9.51%;--y:14.81%;--size:2.5px;--delay:-7.9s;--duration:5.8s"></i><i style="--x:52.59%;--y:50.28%;--size:1px;--delay:-5.8s;--duration:8.5s"></i><i style="--x:17.13%;--y:33.38%;--size:1px;--delay:-6.0s;--duration:7.5s"></i><i style="--x:89.92%;--y:79.94%;--size:2.5px;--delay:-6.1s;--duration:6.5s"></i><i style="--x:76.68%;--y:25.86%;--size:1px;--delay:-4.7s;--duration:9.0s"></i><i style="--x:40.96%;--y:62.11%;--size:2.5px;--delay:-9.7s;--duration:8.5s"></i><i style="--x:19.93%;--y:56.36%;--size:1px;--delay:-6.8s;--duration:6.8s"></i><i style="--x:77.80%;--y:90.18%;--size:1.5px;--delay:-5.7s;--duration:6.7s"></i><i style="--x:56.15%;--y:22.55%;--size:1px;--delay:-6.6s;--duration:8.9s"></i><i style="--x:88.81%;--y:6.62%;--size:1px;--delay:-9.9s;--duration:8.1s"></i><i style="--x:17.22%;--y:67.45%;--size:2.5px;--delay:-8.8s;--duration:5.7s"></i><i style="--x:88.09%;--y:70.29%;--size:1px;--delay:-1.6s;--duration:8.6s"></i><i style="--x:4.45%;--y:39.01%;--size:2px;--delay:-5.1s;--duration:8.2s"></i><i style="--x:48.01%;--y:84.09%;--size:2px;--delay:-5.8s;--duration:8.6s"></i><i style="--x:37.00%;--y:17.76%;--size:2px;--delay:-11.3s;--duration:5.0s"></i><i style="--x:77.64%;--y:31.26%;--size:2px;--delay:-2.3s;--duration:9.0s"></i><i style="--x:11.69%;--y:90.17%;--size:2px;--delay:-4.4s;--duration:5.3s"></i><i style="--x:85.42%;--y:19.42%;--size:2px;--delay:-6.8s;--duration:7.6s"></i><i style="--x:0.64%;--y:16.64%;--size:1.5px;--delay:-1.2s;--duration:7.7s"></i><i style="--x:49.59%;--y:20.57%;--size:1.5px;--delay:-7.8s;--duration:5.8s"></i><i style="--x:59.53%;--y:64.08%;--size:1px;--delay:-10.3s;--duration:8.7s"></i><i style="--x:41.60%;--y:78.92%;--size:1px;--delay:-9.7s;--duration:9.8s"></i><i style="--x:50.26%;--y:18.82%;--size:1.5px;--delay:-1.1s;--duration:7.4s"></i><i style="--x:7.44%;--y:24.76%;--size:1px;--delay:-8.6s;--duration:6.8s"></i><i style="--x:76.82%;--y:65.79%;--size:1.5px;--delay:-3.9s;--duration:9.2s"></i><i style="--x:27.52%;--y:44.48%;--size:1px;--delay:-8.4s;--duration:7.9s"></i><i style="--x:63.92%;--y:38.22%;--size:1px;--delay:-4.1s;--duration:8.0s"></i><i style="--x:95.01%;--y:27.61%;--size:1px;--delay:-11.8s;--duration:6.8s"></i><i style="--x:16.98%;--y:53.55%;--size:1.5px;--delay:-5.5s;--duration:6.3s"></i><i style="--x:69.53%;--y:15.74%;--size:1px;--delay:-6.6s;--duration:9.6s"></i><i style="--x:91.30%;--y:65.09%;--size:2.5px;--delay:-2.3s;--duration:7.7s"></i><i style="--x:53.91%;--y:97.31%;--size:2px;--delay:-6.3s;--duration:9.4s"></i><i style="--x:22.11%;--y:91.54%;--size:2.5px;--delay:-11.4s;--duration:9.3s"></i><i style="--x:0.65%;--y:25.86%;--size:2.5px;--delay:-10.3s;--duration:7.4s"></i><i style="--x:73.51%;--y:16.81%;--size:2px;--delay:-1.3s;--duration:7.9s"></i><i style="--x:51.64%;--y:91.09%;--size:1px;--delay:-8.7s;--duration:8.6s"></i><i style="--x:81.29%;--y:37.45%;--size:1.5px;--delay:-5.4s;--duration:5.7s"></i><i style="--x:84.92%;--y:83.79%;--size:2px;--delay:-8.6s;--duration:8.7s"></i><i style="--x:44.10%;--y:43.36%;--size:2px;--delay:-11.2s;--duration:5.7s"></i><i style="--x:37.42%;--y:54.78%;--size:1.5px;--delay:-8.3s;--duration:6.1s"></i><i style="--x:49.81%;--y:94.73%;--size:1px;--delay:-1.5s;--duration:7.2s"></i><i style="--x:62.94%;--y:99.96%;--size:1px;--delay:-10.0s;--duration:7.0s"></i><i style="--x:93.26%;--y:7.65%;--size:1px;--delay:-6.5s;--duration:9.9s"></i><i style="--x:24.29%;--y:10.28%;--size:1px;--delay:-4.2s;--duration:6.3s"></i><i style="--x:42.94%;--y:37.84%;--size:1.5px;--delay:-10.4s;--duration:6.5s"></i><i style="--x:43.89%;--y:93.99%;--size:2.5px;--delay:-11.9s;--duration:8.0s"></i><i style="--x:6.23%;--y:90.06%;--size:2.5px;--delay:-3.8s;--duration:6.9s"></i><i style="--x:54.87%;--y:21.05%;--size:2px;--delay:-4.9s;--duration:9.5s"></i><i style="--x:71.11%;--y:79.34%;--size:2px;--delay:-1.0s;--duration:7.5s"></i><i style="--x:66.17%;--y:70.12%;--size:2px;--delay:-1.6s;--duration:6.3s"></i><i style="--x:3.92%;--y:19.22%;--size:1.5px;--delay:-5.2s;--duration:5.2s"></i><i style="--x:36.74%;--y:62.92%;--size:1px;--delay:-11.5s;--duration:9.8s"></i><i style="--x:78.70%;--y:24.34%;--size:1.5px;--delay:-6.6s;--duration:7.3s"></i><i style="--x:81.30%;--y:6.31%;--size:2.5px;--delay:-6.6s;--duration:6.5s"></i><i style="--x:17.61%;--y:68.49%;--size:1px;--delay:-4.6s;--duration:8.3s"></i><i style="--x:4.70%;--y:56.42%;--size:1px;--delay:-2.1s;--duration:7.1s"></i><i style="--x:99.33%;--y:77.76%;--size:2.5px;--delay:-4.6s;--duration:5.9s"></i><i style="--x:50.58%;--y:67.00%;--size:2px;--delay:-1.2s;--duration:7.5s"></i><i style="--x:57.64%;--y:51.90%;--size:1.5px;--delay:-10.6s;--duration:6.5s"></i><i style="--x:71.17%;--y:9.77%;--size:1.5px;--delay:-12.0s;--duration:5.9s"></i><i style="--x:42.86%;--y:78.53%;--size:1px;--delay:-5.2s;--duration:8.2s"></i><i style="--x:88.88%;--y:63.24%;--size:2px;--delay:-11.6s;--duration:7.4s"></i><i style="--x:92.35%;--y:49.14%;--size:2.5px;--delay:-10.8s;--duration:9.7s"></i><i style="--x:83.48%;--y:17.51%;--size:1.5px;--delay:-4.5s;--duration:7.3s"></i><i style="--x:76.37%;--y:62.59%;--size:2.5px;--delay:-0.3s;--duration:8.4s"></i><i style="--x:70.26%;--y:85.75%;--size:2.5px;--delay:-4.9s;--duration:7.6s"></i><i style="--x:48.04%;--y:90.51%;--size:1px;--delay:-3.5s;--duration:9.1s"></i><i style="--x:95.63%;--y:65.98%;--size:1px;--delay:-2.6s;--duration:7.5s"></i><i style="--x:24.50%;--y:11.62%;--size:1px;--delay:-11.4s;--duration:8.2s"></i><i style="--x:76.54%;--y:57.90%;--size:1px;--delay:-7.9s;--duration:6.0s"></i><i style="--x:55.14%;--y:6.52%;--size:1px;--delay:-6.9s;--duration:7.6s"></i><i style="--x:82.98%;--y:37.78%;--size:1.5px;--delay:-3.3s;--duration:6.5s"></i><i style="--x:30.98%;--y:22.75%;--size:1.5px;--delay:-1.7s;--duration:8.9s"></i><i style="--x:66.94%;--y:31.24%;--size:1px;--delay:-4.9s;--duration:5.6s"></i><i style="--x:78.96%;--y:74.50%;--size:1.5px;--delay:-10.5s;--duration:5.5s"></i><i style="--x:66.69%;--y:67.64%;--size:1px;--delay:-2.0s;--duration:6.2s"></i><i style="--x:56.91%;--y:45.68%;--size:2.5px;--delay:-0.1s;--duration:5.2s"></i><i style="--x:17.95%;--y:97.05%;--size:1px;--delay:-11.4s;--duration:5.0s"></i><i style="--x:24.67%;--y:88.30%;--size:1.5px;--delay:-5.6s;--duration:5.1s"></i><i style="--x:97.54%;--y:31.84%;--size:1px;--delay:-1.6s;--duration:9.1s"></i><i style="--x:5.91%;--y:87.78%;--size:1px;--delay:-8.9s;--duration:9.9s"></i><i style="--x:53.98%;--y:20.22%;--size:1px;--delay:-1.7s;--duration:6.8s"></i><i style="--x:16.56%;--y:14.10%;--size:2px;--delay:-1.4s;--duration:6.7s"></i><i style="--x:6.40%;--y:74.65%;--size:2px;--delay:-5.6s;--duration:7.3s"></i><i style="--x:10.83%;--y:40.98%;--size:1.5px;--delay:-7.9s;--duration:9.7s"></i><i style="--x:81.84%;--y:97.81%;--size:1px;--delay:-2.6s;--duration:5.4s"></i><i style="--x:47.03%;--y:29.75%;--size:1.5px;--delay:-10.0s;--duration:9.8s"></i><i style="--x:33.14%;--y:40.74%;--size:1px;--delay:-0.3s;--duration:7.9s"></i><i style="--x:9.79%;--y:30.60%;--size:2px;--delay:-10.0s;--duration:6.7s"></i><i style="--x:65.71%;--y:34.88%;--size:2px;--delay:-4.1s;--duration:7.9s"></i><i style="--x:67.34%;--y:90.14%;--size:1px;--delay:-1.3s;--duration:5.4s"></i><i style="--x:4.81%;--y:85.37%;--size:1px;--delay:-8.3s;--duration:7.1s"></i><i style="--x:24.85%;--y:24.41%;--size:2.5px;--delay:-6.1s;--duration:7.5s"></i><i style="--x:22.43%;--y:85.02%;--size:2px;--delay:-3.5s;--duration:9.5s"></i><i style="--x:16.87%;--y:85.15%;--size:1px;--delay:-10.7s;--duration:6.4s"></i><i style="--x:60.38%;--y:10.10%;--size:1px;--delay:-2.3s;--duration:6.2s"></i></div>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<header class="shell utility" aria-label="Audio controls">
+<button id="show-guide" hidden>Open guide</button>
+<details id="audio-settings"><summary title="Audio settings" aria-label="Audio settings"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3 1-2h4l1 2 3 2 2 .2 2 3-1 2v4l1 2-2 3-2 .2-3 2-1 2h-4l-1-2-3-2-2-.2-2-3 1-2v-4l-1-2 2-3L6 5Z" transform="translate(1 1) scale(.9)"/><circle cx="12" cy="12" r="3.3"/></svg><span class="sr-only">Audio settings</span></summary>
+<div class="settings">
+<button id="stop-all"><span aria-hidden="true">■</span> Stop all audio</button>
+<label for="utility-volume">General volume <output id="utility-volume-value">40%</output><input id="utility-volume" type="range" min="0" max="100" value="40"></label>
+<label for="music-volume">Background music <output id="music-volume-value">20%</output><input id="music-volume" type="range" min="0" max="100" value="20"></label>
+<label for="narration-volume">Narration <output id="narration-volume-value">80%</output><input id="narration-volume" type="range" min="0" max="100" value="80"></label>
+</div></details>
+<p id="global-state" class="sr-only">Audio off</p><p id="music-status" class="sr-only" role="status"></p>
+</header>
+<main class="shell" id="main-content" tabindex="-1">
+<section class="welcome" id="welcome" aria-labelledby="welcome-title">
+  <div class="welcome-lead"><h1 class="welcome-title" id="welcome-title" tabindex="-1">Musica Universalis</h1><p>An Earth listening experience</p></div>
+  <div class="welcome-player">
+    <div class="intro-player-row">
+      <button id="narration-play" class="intro-circle" aria-pressed="false" aria-controls="introduction-audio" aria-labelledby="narration-label">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 27v-5a16 16 0 0 1 32 0v5"/><rect x="6" y="24" width="8" height="15" rx="4"/><rect x="34" y="24" width="8" height="15" rx="4"/></svg>
+        <span id="narration-icon" aria-hidden="true">▶</span>
+      </button>
+      <div class="intro-track"><span id="narration-label">Listen to the introduction</span>
+        <svg id="voice-wave" viewBox="0 0 240 52" preserveAspectRatio="none" aria-hidden="true"><polyline id="wave-line" points="0,26 240,26" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <div class="progress-row"><progress id="intro-progress" value="0" max="1" aria-label="Introduction playback progress"></progress><span id="intro-time">0:00</span></div>
+      </div>
     </div>
+    <nav class="welcome-actions" aria-label="Begin your experience"><button class="primary" id="start-experience">Start guide <span aria-hidden="true">↗</span></button></nav>
+    <div class="secondary-actions"><button id="skip-intro" class="map-alternative">Explore map</button>
+    <details class="transcript"><summary><span class="chevron" aria-hidden="true">›</span> Read introduction</summary><p id="intro-transcript">Welcome to Musica Universalis. Across our planet, countless stories unfold every second. You’ve seen the world… but have you ever listened to it? Patterns shift, particles travel, and changes unfold beyond what our eyes can follow. Join us to discover these stories through music. Put on your headphones if you have them, settle in, and start the guide when you’re ready. Or explore the map at your own pace.</p></details></div>
+    <p id="narration-status" role="status" class="audio-status"></p>
+  </div>
+</section>
+<section id="onboarding" class="stage" hidden aria-labelledby="stage-title">
+  <div class="step-top"><p id="stage-progress">Step 1 of 4</p><button id="stage-skip" class="quiet">Skip to map <span aria-hidden="true">↗</span></button><div id="guide-settings-slot" class="utility"></div></div>
+  <div class="stage-content"><h1 id="stage-title" tabindex="-1">Get comfortable.</h1><div class="guide-narration"><div class="guide-voice-control"><button id="guide-narration-play" class="intro-circle" aria-pressed="false" aria-labelledby="guide-voice-label"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 27v-5a16 16 0 0 1 32 0v5"/><rect x="6" y="24" width="8" height="15" rx="4"/><rect x="34" y="24" width="8" height="15" rx="4"/></svg><span id="guide-voice-icon" aria-hidden="true">▶</span></button><span id="guide-voice-label">Play narration</span></div><details><summary><span class="chevron" aria-hidden="true">›</span> Read transcript</summary><p id="guide-transcript"></p></details></div><div id="stage-body"></div><p id="stage-status" role="status" aria-atomic="true" class="audio-status"></p></div>
+  <nav class="stage-nav" aria-label="Guide navigation"><button id="stage-back">Back</button><button class="primary" id="stage-next">Continue</button></nav>
+</section>
+<section id="experience" hidden aria-labelledby="map-title">
+  <div class="intro"><span class="eyebrow">Earth · 19 August 2025</span><h2 tabindex="-1" id="map-title">Listen. Then explore.</h2></div>
+  <div class="map-shell">
+    <canvas id="map" width="1920" height="1080" role="img" aria-label="Earth aerosol map, 19 August 2025"></canvas>
+    <div class="transport"><button class="primary" id="play">Play</button><button id="mode" aria-pressed="true">Audio: Spatial 3D</button><button id="rec">Record</button></div>
+    <div id="solo" role="group" aria-label="Listen to one aerosol type">
+      <button data-sp="all" aria-pressed="true">All</button><button data-sp="seasalt" aria-pressed="false">Sea salt</button><button data-sp="dust" aria-pressed="false">Dust</button><button data-sp="smoke" aria-pressed="false">Smoke</button><button data-sp="sulfate" aria-pressed="false">Sulfates</button>
+    </div>
+    <p id="legend" aria-live="polite"></p><p id="status" aria-live="polite"></p><p id="info"></p>
+    <details><summary>Mix settings</summary><div id="mix">
+      <label>Volume <output id="map-volume-value">40%</output><input id="master-volume" type="range" min="0" max="100" value="40"></label>
+      <label>Rhythm<input id="rhythm" type="range" min="0" max="100" value="50"></label>
+      <label>Drops<input id="drop" type="range" min="0" max="100" value="70"></label>
+      <label>Volume contrast<input id="dyn" type="range" min="0" max="100" value="70"></label>
+    </div></details>
+  </div>
+  
+</section>
+</main>
+<footer class="shell footer">Based on <a href="https://svs.gsfc.nasa.gov/5669/">NASA’s GEOS aerosol visualization</a>.<br>Musica Universalis is an independent educational experience.<br><button id="star-motion" class="quiet" aria-pressed="true">Pause stars</button></footer>
+<audio id="introduction-audio" preload="metadata" src="audio/welcome.mp3"></audio>
+<audio id="guide-audio" preload="none"></audio>
+<audio id="landing-music" preload="none" loop src="audio/ambient.mp3"></audio>
+<p id="audio-announcement" class="sr-only" role="status" aria-atomic="true"></p>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script src="app.js"></script><script src="explore.js"></script>
+<script>
+(() => {
+  'use strict';
+  const el=id=>document.getElementById(id);
+  const svg=(paths,cls='')=>`<svg class="${cls}" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">${paths}</svg>`;
+  const icons={
+    dust:svg('<path d="m12 19 9-9 10 8-5 13-13-1Z M37 33l12-7 8 12-9 13-13-5Z M11 45l7-5 7 8-9 7Z"/><circle cx="45" cy="12" r="3"/>','particle-icon'),
+    seasalt:svg('<path d="M5 22c9-13 17 13 27 0s18 13 27 0M5 36c9-13 17 13 27 0s18 13 27 0M5 50c9-13 17 13 27 0s18 13 27 0"/>','particle-icon'),
+    smoke:svg('<path d="M17 55c-14-14 15-18 5-31-7-9-1-15 5-19M33 58c-11-12 15-18 7-30-7-10-3-18 4-22M48 55c-7-9 8-15 5-24"/>','particle-icon'),
+    sulfate:svg('<circle cx="32" cy="31" r="9"/><circle cx="14" cy="13" r="6"/><circle cx="51" cy="15" r="5"/><circle cx="15" cy="51" r="5"/><circle cx="51" cy="51" r="7"/><path d="m19 18 7 7m13 0 8-7M25 38l-7 9m21-10 7 9"/>','particle-icon')
+  };
+  const particles={
+    dust:{name:'Dust',text:'Dust is made of tiny mineral particles from soil and rock. Wind lifts it from dry ground and deserts. Air currents can carry it far from its source before it settles or is removed by rain.',voice:'Short, bright notes in a repeating pattern.',direction:'Right',mark:'Grains',position:[4.5,.5,-3.5],pan:.65},
+    seasalt:{name:'Sea salt',text:'Sea-salt aerosols come from ocean spray. Breaking waves release droplets that can leave salt particles in the air. Winds carry them over the ocean and toward land, until they settle or are removed by precipitation.',voice:'A soft, sustained chord.',direction:'Left',mark:'Waves',position:[-4.5,.5,-4],pan:-.65},
+    smoke:{name:'Smoke',text:'Smoke contains particles released when material burns, including vegetation during fires. Rising plumes lift these particles into the atmosphere. Winds spread them away from the fire, sometimes far beyond the area that burned.',voice:'A low, textured bass tone.',direction:'Low, near centre',mark:'Wisps',position:[0,-2.5,-1.5],pan:0},
+    sulfate:{name:'Sulfates',text:'Sulfate aerosols can form when sulfur-containing gases react in the atmosphere. Sources include volcanic emissions and pollution from burning sulfur-containing fuels. Winds transport the gases and particles, and precipitation can remove them from the air.',voice:'Bright, bell-like notes.',direction:'High, slightly left',mark:'Cluster',position:[-1.5,3,-3],pan:-.2}
+  };
+  const order=['dust','seasalt','smoke','sulfate'];
+  const titles=['Get comfortable.','Meet the particles.','Learn their musical voices.','Discover spatial audio.'];
+  const clarification='This experience translates patterns in a NASA visualization into sound. These are representations, not recordings of particles or direct measurements of concentration.';
+  let narrationBaseVolume=.8;
+  let step=0,screen='welcome',selectedParticle='dust',selectedVoice='dust',volume=.4;
+  let pausedAudio=null;
+  function clearResume(){pausedAudio=null;el("stop-all").innerHTML='<span aria-hidden="true">■</span> Stop all audio';}
+  let epoch=0,sample=null,samplePending=false,speech=null,speechEpoch=0;
+  let introPending=false,introEpoch=0,musicPending=false,musicEpoch=0,introFinished=false;
+  const narration=el('introduction-audio'),music=el('landing-music');
+  const guideAudio=el('guide-audio');
+  let guideEpoch=0,guidePending=false,guideFinished=false;
+  // PAGE NARRATION FILES — replace these paths and transcripts together.
+  const GUIDE_NARRATIONS=[
+    {src:'audio/01-get-comfortable.mp3',text:'Let’s get comfortable. Play the sample and choose a volume that feels right for you. When you are ready, continue to meet the particles.'},
+    {src:'audio/02-meet-the-particles.mp3',text:'Meet the particles: dust, sea salt, smoke, and sulfates. Select each one to discover what it is, where it comes from, and how it travels. This experience translates patterns in a NASA visualization into sound. These are representations, not recordings of particles or direct measurements of concentration.'},
+    {src:'audio/03-musical-voices.mp3',text:'Each particle has its own musical voice. Sea salt is a soft sustained chord. Dust is a pattern of short bright notes. Smoke is a low textured bass. Sulfates are bright bell-like notes. Play them in any order, as often as you like. There is no test.'},
+    {src:'audio/04-spatial-audio.mp3',text:'Now listen for direction from your own perspective. Dust is on the right. Sea salt is on the left. Smoke is low and near the center. Sulfates are high and slightly left. Spatial height is different from musical pitch. Direction identifies a musical voice, not a geographic location. The effect varies between listeners. You can turn spatial audio off and still explore every voice.'}
+  ];
+  function guideUI(active){el('guide-narration-play').setAttribute('aria-pressed',String(active));el('guide-voice-icon').textContent=active?'Ⅱ':'▶';el('guide-voice-label').textContent=active?'Pause narration':guideFinished?'Replay narration':'Play narration';}
+  function stopGuide(reset=false){guideEpoch++;guidePending=false;guideAudio.pause();if(reset){guideAudio.currentTime=0;guideFinished=false;}guideUI(false);}
+  async function playGuide(){
+    clearResume();
+    if(guidePending||!guideAudio.paused){stopGuide();return;}
+    stopIntro();stopSample();stopSpeech();stopMap();
+    if(guideFinished){guideAudio.currentTime=0;guideFinished=false;}
+    const request=++guideEpoch;guidePending=true;guideUI(true);
+    try{await guideAudio.play();if(request!==guideEpoch)return;guidePending=false;guideUI(true);updateGlobalState();}
+    catch{if(request!==guideEpoch)return;stopGuide();stageMessage('Narration is unavailable. Read this step, or continue without audio.');}
+  }
+  el('guide-narration-play').onclick=playGuide;
+  guideAudio.onended=()=>{guidePending=false;guideFinished=true;guideUI(false);updateGlobalState();};
+  guideAudio.onerror=()=>{stopGuide();if(screen==='guide')stageMessage('Narration is unavailable. Read this step, or continue without audio.');};
 
-  <p id="legend" aria-live="polite"></p>
-  <p id="status" aria-live="polite"></p>
-  <p id="info"></p>
+  const announce=text=>{el('audio-announcement').textContent=text;};
+  const stageMessage=text=>{el('stage-status').textContent=text;};
+  const timeString=n=>`${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,'0')}`;
+  const isSpatial=()=>typeof spatialMode==='undefined'?true:spatialMode;
+  function mapRunning(){return !!window.MUExplore?.getState().running || (typeof playing!=='undefined'&&playing);}
+  function updateGlobalState(){
+    const state=samplePending?'Loading sample':sample?.state==='playing'?'Sample playing':sample?.state==='paused'?'Sample paused':speech?'Explanation playing':guidePending?'Loading narration':!guideAudio.paused?'Step narration playing':introPending?'Loading introduction':!narration.paused?'Introduction playing':musicPending?'Loading music':!music.paused?'Background music playing':mapRunning()?'Map audio on':'Audio off';
+    const text=state+' · Escape stops audio';if(el('global-state').textContent!==text)el('global-state').textContent=text;
+  }
+  function setVolume(value){
+    volume=Math.max(0,Math.min(1,Number(value)/100));
+    for(const id of ['utility-volume','guide-volume','master-volume'])if(el(id)){el(id).value=Math.round(volume*100);el(id).setAttribute('aria-valuetext',`${Math.round(volume*100)} percent`);}
+    for(const id of ['utility-volume-value','guide-volume-value','map-volume-value'])if(el(id))el(id).textContent=`${Math.round(volume*100)}%`;
+    if(typeof Tone!=='undefined')Tone.getDestination().volume.value=volume?20*Math.log10(volume):-Infinity;
+    if(sample)sample.output.gain.rampTo(volume*.55,.08);
+    narration.volume=narrationBaseVolume*volume;guideAudio.volume=narration.volume;
+  }
+  function introUI(active){el('narration-label').textContent=active?'Pause introduction':introFinished?'Replay introduction':'Listen to the introduction';el('narration-icon').textContent=active?'Ⅱ':'▶';el('narration-play').setAttribute('aria-pressed',String(active));}
+  function updateIntroProgress(){
+    const duration=Number.isFinite(narration.duration)?narration.duration:0,current=Number.isFinite(narration.currentTime)?narration.currentTime:0;
+    el('intro-progress').max=duration||1;el('intro-progress').value=current;
+    el('intro-progress').setAttribute('aria-valuetext',`${timeString(current)}${duration?' of '+timeString(duration):''}`);
+    el('intro-time').textContent=timeString(current)+(duration?' / '+timeString(duration):'');
+  }
+  function stopIntro(reset=false){stopGuide(reset);introEpoch++;introPending=false;narration.pause();if(reset){narration.currentTime=0;introFinished=false;updateIntroProgress();}introUI(false);updateGlobalState();}
+  function stopMusic(keepEnabled=false){if(!keepEnabled)musicEnabled=false;musicEpoch++;musicPending=false;music.pause();updateGlobalState();}
+  function stopSpeech(){speechEpoch++;if(speech&&window.speechSynthesis)window.speechSynthesis.cancel();speech=null;const b=el('explanation-play');if(b){b.setAttribute('aria-pressed','false');b.innerHTML='<span aria-hidden="true">▶</span> Listen to explanation';}updateGlobalState();}
+  function stopMap(){if(window.MUExplore)window.MUExplore.pause();else if(typeof Tone!=='undefined'){Tone.Transport.pause();Tone.getDestination().mute=true;if(typeof playing!=='undefined')playing=false;}}
+  function sampleUI(){
+    const active=sample?.state==='playing',paused=sample?.state==='paused';
+    document.querySelectorAll('[data-voice]').forEach(b=>{const chosen=b.dataset.voice===selectedVoice;b.setAttribute('aria-pressed',String(chosen));b.querySelector('.selection-marker').textContent=chosen?(active?'Selected · Playing':paused?'Selected · Paused':'Selected'):'Play sound';});
+    document.querySelectorAll('.direction-dot').forEach(dot=>dot.classList.toggle('active',!!sample&&dot.dataset.particle===selectedVoice));
+    if(el('test-play')){el('test-play').setAttribute('aria-pressed',String(active));el('test-label').textContent=active?'Pause test sound':paused?'Resume test sound':'Test sound';el('test-icon').textContent=active?'Ⅱ':'▶';}
+    if(el('sample-toggle')){el('sample-toggle').textContent=active?'Ⅱ Pause sample':paused?'▶ Resume sample':'▶ Replay sample';el('sample-toggle').setAttribute('aria-pressed',String(active));}
+    if(el('voice-name')){el('voice-name').textContent=particles[selectedVoice].name;el('voice-description').textContent=particles[selectedVoice].voice;}
+    updateGlobalState();
+  }
+  function stopSample(){
+    epoch++;samplePending=false;
+    if(sample){const previous=sample;sample=null;clearInterval(previous.timer);previous.output.gain.value=0;for(const n of previous.nodes)try{n.dispose();}catch{}void previous.context.close().catch(()=>{});previous.context.dispose();}
+    sampleUI();
+  }
+  function stopAll(reset=false){clearResume();stopIntro(reset);stopMusic();stopSpeech();stopSample();stopMap();updateGlobalState();}
+  el('stop-all').onclick=async()=>{
+    if(pausedAudio){
+      const saved=pausedAudio;clearResume();
+      if(saved.screen!==screen||saved.step!==step)return;
+      if(saved.intro)await el('narration-play').onclick();
+      else if(saved.guide)await playGuide();
+      else if(saved.sample&&sample===saved.sample)await toggleSample(selectedVoice);
+      else if(saved.speech){readExplanation();stageMessage('Explanation restarted.');}
+      if(saved.music){musicEnabled=true;void startMusic();}
+      updateGlobalState();return;
+    }
+    const saved={screen,step,intro:!narration.paused||introPending,guide:!guideAudio.paused||guidePending,music:!music.paused||musicPending,sample:sample?.state==='playing'?sample:null,speech:!!speech};
+    stopIntro();stopMusic();stopSpeech();stopMap();
+    if(saved.sample){sample.state='paused';void sample.context.rawContext.suspend().catch(()=>stopSample());sampleUI();}
+    else if(samplePending)stopSample();
+    if(saved.intro||saved.guide||saved.music||saved.sample||saved.speech){pausedAudio=saved;el('stop-all').innerHTML='<span aria-hidden="true">▶</span> Resume audio';}
+    announce('All audio stopped. Use Resume audio to continue.');updateGlobalState();
+  };
+  const motionPreference=window.matchMedia('(prefers-reduced-motion: reduce)');
+  function setStars(active){document.body.classList.toggle('stars-paused',!active);el('star-motion').setAttribute('aria-pressed',String(active));el('star-motion').textContent=active?'Pause stars':'Animate stars';}
+  setStars(!motionPreference.matches);
+  el('star-motion').onclick=()=>setStars(document.body.classList.contains('stars-paused'));
+  motionPreference.addEventListener('change',e=>setStars(!e.matches));
 
-  <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
-  <script src="app.js"></script>
-  <script src="explore.js"></script>
-</body>
-</html>
+  el('utility-volume').oninput=e=>setVolume(e.target.value);el('master-volume').oninput=e=>setVolume(e.target.value);setVolume(40);
+  // AMBIENT SETTINGS: normal volume 20%; narration uses 25% of that volume.
+  let musicEnabled=false;
+  let musicBaseVolume=.20;
+  const MUSIC_DUCK_FACTOR=.25;
+  narration.volume=narrationBaseVolume*volume;guideAudio.volume=narration.volume;music.volume=musicBaseVolume*volume;
+  // Smooth volume changes, including when narration pauses or finishes.
+  setInterval(()=>{
+    const target=volume*musicBaseVolume*((!narration.paused||!guideAudio.paused||speech)?MUSIC_DUCK_FACTOR:1);
+    music.volume=Math.abs(target-music.volume)<.001?target:music.volume+(target-music.volume)*.2;
+  },50);
+  async function startMusic(){
+    if(!musicEnabled||screen==='map'||sample||samplePending||musicPending||!music.paused)return;
+    const request=++musicEpoch;musicPending=true;
+
+    try{await music.play();if(request!==musicEpoch)return;musicPending=false;el('music-status').textContent='Background music on.';updateGlobalState();}
+    catch{if(request!==musicEpoch)return;stopMusic();el('music-status').textContent='Music is unavailable. Check audio/ambient.mp3, or try enabling it again.';}
+  }
+  el('narration-volume').oninput=e=>{narrationBaseVolume=Number(e.target.value)/100;narration.volume=narrationBaseVolume*volume;guideAudio.volume=narration.volume;el('narration-volume-value').textContent=e.target.value+'%';};
+  el('music-volume').oninput=e=>{musicBaseVolume=Number(e.target.value)/100;el('music-volume-value').textContent=e.target.value+'%';if(musicBaseVolume>0){musicEnabled=true;void startMusic();}};
+  el('narration-play').onclick=async()=>{
+    clearResume();
+    if(introPending||!narration.paused){stopIntro();el('narration-status').textContent='Introduction paused.';return;}
+    stopSpeech();stopSample();stopMap();if(introFinished){narration.currentTime=0;introFinished=false;}
+    const request=++introEpoch;introPending=true;introUI(true);el('narration-status').textContent='Loading introduction…';updateGlobalState();
+    try{try{await prepareWave();}catch{}await narration.play();if(request!==introEpoch)return;introPending=false;introUI(true);el('narration-status').textContent='Playing introduction.';updateGlobalState();}
+    catch{if(request!==introEpoch)return;stopIntro();el('narration-status').textContent='Introduction audio is unavailable. You can read the transcript or continue without audio.';}
+  };
+  narration.onended=()=>{introPending=false;introFinished=true;introUI(false);updateIntroProgress();el('narration-status').textContent='Introduction finished. Replay it, start the guide, or explore the map.';updateGlobalState();};
+  narration.ontimeupdate=updateIntroProgress;narration.onloadedmetadata=updateIntroProgress;
+  narration.onerror=()=>{stopIntro();el('narration-status').textContent='Introduction audio is unavailable. Read the introduction below, or continue without audio.';};
+  narration.onpause=()=>{introUI(false);updateGlobalState();};
+  const settingsMenu=el('audio-settings');
+  document.addEventListener('click',e=>{if(!settingsMenu.contains(e.target))settingsMenu.open=false;});
+  settingsMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){settingsMenu.open=false;settingsMenu.querySelector('summary').focus();}});
+  // Real narration waveform; no simulated movement when audio is unavailable.
+  let waveContext,analyser,waveSource,waveData;
+  async function prepareWave(){
+    const Context=window.AudioContext||window.webkitAudioContext;
+    if(!Context)return;
+    if(!waveContext){
+      waveContext=new Context();
+      analyser=waveContext.createAnalyser();analyser.fftSize=256;
+      waveData=new Uint8Array(analyser.fftSize);
+      waveSource=waveContext.createMediaElementSource(narration);
+      waveSource.connect(waveContext.destination);waveSource.connect(analyser);
+    }
+    await waveContext.resume();
+  }
+  setInterval(()=>{
+    if(!analyser||narration.paused||window.matchMedia('(prefers-reduced-motion: reduce)').matches){el('wave-line').setAttribute('points','0,26 240,26');return;}
+    analyser.getByteTimeDomainData(waveData);
+    const points=Array.from({length:80},(_,i)=>{
+      const v=(waveData[Math.floor(i*waveData.length/80)]-128)/128;
+      return `${(i*240/79).toFixed(1)},${(26+v*24).toFixed(1)}`;
+    });
+    el('wave-line').setAttribute('points',points.join(' '));
+  },50);
+  const entryDialog=el('headphone-welcome');
+  function closeEntry(){entryDialog.close();el('welcome-title').focus();}
+  el('enter-with-music').onclick=()=>{
+    musicEnabled=true;
+    // Start directly from the visitor's click so playback is user-initiated.
+    void startMusic();
+    closeEntry();
+  };
+  el('enter-quietly').onclick=()=>{stopMusic();closeEntry();};
+  entryDialog.addEventListener('cancel',()=>{stopAll(true);});
+  entryDialog.addEventListener('close',()=>el('welcome-title').focus());
+  music.onerror=()=>{stopMusic();el('music-status').textContent='Music is unavailable. Continue without it.';};
+  function speaker(loud=false){return svg('<path d="M10 25h10l13-11v36L20 39H10Z"/>'+(loud?'<path d="M42 20c9 7 9 17 0 24M49 12c15 12 15 28 0 40"/>':'<path d="M42 26c4 3 4 9 0 12"/>'));}
+  function orbitalTest(){return `<div class="test-player"><button id="test-play" class="test-circle" aria-pressed="false" aria-labelledby="test-label">${speaker(true)}<span id="test-icon" aria-hidden="true">▶</span></button><p id="test-label">Test sound</p></div>`;}
+
+  function listener(spatial){return `<figure class="listener"><svg viewBox="0 0 220 240" fill="none" aria-hidden="true" focusable="false"><circle cx="110" cy="115" r="83" stroke="#655d78" stroke-dasharray="3 9"/><path d="M53 124V98a57 57 0 0 1 114 0v26" stroke="#ddd2ff" stroke-width="5"/><rect x="47" y="110" width="22" height="48" rx="10" fill="#292238" stroke="#d2c5ed" stroke-width="2"/><rect x="151" y="110" width="22" height="48" rx="10" fill="#292238" stroke="#d2c5ed" stroke-width="2"/><ellipse cx="110" cy="116" rx="32" ry="41" stroke="#c5b8de" stroke-width="2"/><path d="M66 199c3-39 85-39 88 0M99 158v17m22-17v17" stroke="#c5b8de" stroke-width="2"/>${spatial?'<circle class="direction-dot" data-particle="sulfate" cx="73" cy="23" r="8"/><circle class="direction-dot" data-particle="seasalt" cx="15" cy="116" r="8"/><circle class="direction-dot" data-particle="dust" cx="205" cy="116" r="8"/><circle class="direction-dot" data-particle="smoke" cx="110" cy="222" r="8"/>':''}</svg><figcaption>${spatial?'Your listening space':'One world. Four voices.'}</figcaption></figure>`;}
+  function soundStage(spatial){return `<div class="sound-stage" role="group" aria-label="Play aerosol voices">${listener(spatial)}${['sulfate','seasalt','dust','smoke'].map(id=>`<button class="voice-control ${id}" data-voice="${id}" aria-pressed="${id===selectedVoice}">${icons[id]}<strong>${particles[id].name}</strong><small>${spatial?particles[id].direction:particles[id].mark}</small><span class="selection-marker">${id===selectedVoice?'Selected':'Play sound'}</span></button>`).join('')}</div><div class="sound-info"><h2 id="voice-name">${particles[selectedVoice].name}</h2><p id="voice-description">${particles[selectedVoice].voice}</p></div><div class="playback-controls"><button id="sample-toggle" aria-pressed="false">▶ Replay sample</button><button id="sample-stop">■ Stop sample</button></div>`;}
+  function renderStep(){
+    el('stage-title').textContent=titles[step];el('stage-progress').textContent=`Step ${step+1} of 4`;el('stage-next').textContent=step===3?'Explore map':'Continue';
+    if(step===0)el('stage-body').innerHTML=`${orbitalTest()}<div class="volume-control"><label for="guide-volume">Volume <output id="guide-volume-value">${Math.round(volume*100)}%</output></label><div class="slider-row">${speaker()}<input id="guide-volume" type="range" min="0" max="100" value="${Math.round(volume*100)}">${speaker(true)}</div></div>`;
+    else if(step===1){el('stage-body').innerHTML=`<div class="particle-selectors" role="group" aria-label="Choose a particle to learn about">${order.map(id=>`<button class="particle-selector ${id}" data-particle-select="${id}" aria-pressed="${id===selectedParticle}" aria-controls="particle-explanation">${icons[id]}<strong>${particles[id].name}</strong><span class="selection-marker">${id===selectedParticle?'Selected':''}</span></button>`).join('')}</div><div class="explanation" id="particle-explanation"><div id="explanation-copy" aria-live="polite" aria-atomic="true"></div><div class="actions"><button id="explanation-play" aria-pressed="false"><span aria-hidden="true">▶</span> Listen to explanation</button></div></div><p class="science-note note">${clarification}</p>`;renderExplanation();}
+    else if(step===2)el('stage-body').innerHTML=`${soundStage(false)}<p class="note">On the map, north–south position changes notes. Visual intensity and listening settings shape loudness. Here, each voice plays a short example at the centre.</p>`;
+    else el('stage-body').innerHTML=`${soundStage(true)}<label class="switch"><input id="guide-spatial" type="checkbox" ${isSpatial()?'checked':''}> Spatial audio</label><p class="direction-note">Direction identifies a musical voice, not a geographic location.</p><p class="note">Directions are from your perspective: left is your left. “High” and “low” describe positions in space, not musical pitch. Spatial perception varies; labels and individual playback work with spatial audio off, too.</p>`;
+    if(el('guide-volume'))el('guide-volume').oninput=e=>setVolume(e.target.value);
+    if(el('test-play'))el('test-play').onclick=()=>toggleSample('seasalt');
+    if(el('sample-toggle'))el('sample-toggle').onclick=()=>toggleSample(selectedVoice);
+    if(el('sample-stop'))el('sample-stop').onclick=()=>{stopSample();void startMusic();stageMessage('Sample stopped. Choose any voice to play it again.');};
+    if(el('explanation-play'))el('explanation-play').onclick=readExplanation;
+    if(el('guide-spatial'))el('guide-spatial').onchange=()=>{const repeat=sample?.state==='playing';stopSample();if(isSpatial()!==el('guide-spatial').checked)el('mode').click();stageMessage(el('guide-spatial').checked?'Spatial audio on.':'Spatial audio off. Left–right stereo remains available.');if(repeat)void playSample(selectedVoice);};
+    sampleUI();
+  }
+  function renderExplanation(){const p=particles[selectedParticle];el('explanation-copy').innerHTML=`<div class="explanation-heading ${selectedParticle}">${icons[selectedParticle]}<h2>${p.name}</h2></div><p>${p.text}</p>`;document.querySelectorAll('[data-particle-select]').forEach(b=>{const chosen=b.dataset.particleSelect===selectedParticle;b.setAttribute('aria-pressed',String(chosen));b.querySelector('.selection-marker').textContent=chosen?'Selected':'';});}
+  function readExplanation(){
+    clearResume();
+    if(speech){stopSpeech();stageMessage('Explanation stopped.');return;}
+    stopIntro();stopSample();stopMap();
+    if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){stageMessage('Device narration is unavailable. The full explanation is shown above.');return;}
+    const request=++speechEpoch;const utterance=new SpeechSynthesisUtterance(particles[selectedParticle].name+'. '+particles[selectedParticle].text);speech=utterance;utterance.lang='en-US';utterance.rate=.95;utterance.volume=narration.volume;
+    const finish=()=>{if(request!==speechEpoch)return;stopSpeech();stageMessage('Explanation finished. Listen again or choose another particle.');};utterance.onend=finish;utterance.onerror=()=>{if(request!==speechEpoch)return;stopSpeech();stageMessage('Device narration is unavailable. Read the explanation above.');};
+    el('explanation-play').setAttribute('aria-pressed','true');el('explanation-play').innerHTML='<span aria-hidden="true">■</span> Stop explanation';stageMessage('Reading '+particles[selectedParticle].name.toLowerCase()+'.');window.speechSynthesis.speak(utterance);updateGlobalState();
+  }
+  el('stage-body').onclick=e=>{const selector=e.target.closest('[data-particle-select]'),voice=e.target.closest('[data-voice]');if(selector){stopSpeech();selectedParticle=selector.dataset.particleSelect;renderExplanation();stageMessage('');}if(voice){selectedVoice=voice.dataset.voice;void playSample(selectedVoice);}};
+  function enterScreen(next){clearResume();stopIntro(true);stopSpeech();stopSample();stopMap();if(next==='map')stopMusic(true);screen=next;const header=document.querySelector('header.utility');(next==='guide'?el('guide-settings-slot'):header).append(el('audio-settings'));header.hidden=next==='guide';if(next!=='map')void startMusic();el('welcome').hidden=next!=='welcome';el('onboarding').hidden=next!=='guide';el('experience').hidden=next!=='map';el('show-guide').hidden=next!=='map';el('audio-settings').open=false;el('music-status').textContent='';el('narration-status').textContent='';}
+  function showStep(n){enterScreen('guide');step=n;renderStep();stageMessage('');guideAudio.src=GUIDE_NARRATIONS[n].src;guideFinished=false;el('guide-transcript').textContent=GUIDE_NARRATIONS[n].text;guideUI(false);el('stage-title').focus();window.scrollTo(0,0);void playGuide();}
+  // MAP DESTINATION — keep explore.html next to this index.html.
+  function showMap(){
+    stopAll(true);
+    window.location.assign(new URL('explore.html',window.location.href).href);
+  }
+  el('start-experience').onclick=()=>showStep(0);el('skip-intro').onclick=showMap;el('show-guide').onclick=()=>showStep(0);el('stage-skip').onclick=showMap;
+  el('stage-next').onclick=()=>step===3?showMap():showStep(step+1);
+  el('stage-back').onclick=()=>{if(step)showStep(step-1);else{enterScreen('welcome');el('welcome-title').focus();window.scrollTo(0,0);}};
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){stopAll(true);stageMessage('All audio stopped.');announce('All audio stopped.');}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopAll();});
+  window.addEventListener('pagehide',()=>stopAll());
+  async function toggleSample(name){
+    clearResume();
+    if(samplePending){stopSample();stageMessage('Sample stopped.');return;}
+    if(sample?.state==='playing'){
+      sample.state='paused';void sample.context.rawContext.suspend().catch(()=>{stopSample();stageMessage('Sample stopped.');});stageMessage('Sample paused. Resume whenever you’re ready.');sampleUI();
+    }else if(sample?.state==='paused'){
+      const current=sample;const request=epoch;
+      try{await current.context.resume();if(request!==epoch)return;current.state='playing';stageMessage('Playing '+particles[name].name.toLowerCase()+'.');sampleUI();}catch{stopSample();stageMessage('Audio could not resume. Play the sample again.');}
+    }else await playSample(name);
+  }
+  async function playSample(name){
+    clearResume();
+    stopSample();stopIntro();stopMusic(true);stopSpeech();stopMap();selectedVoice=name;const request=epoch;samplePending=true;stageMessage('Loading '+particles[name].name.toLowerCase()+' sample…');updateGlobalState();
+    let context,nodes=[];
+    try{
+      if(typeof Tone==='undefined'||typeof pad==='undefined')throw new Error('Audio engine unavailable');
+      context=new Tone.Context({latencyHint:'interactive',lookAhead:.05});
+      await context.resume();if(request!==epoch){await context.close();context.dispose();return;}
+      const add=node=>{nodes.push(node);return node;};
+      const output=add(new Tone.Gain({context,gain:volume*.55}));
+      const ceiling=add(new Tone.Limiter({context,threshold:-6}));output.connect(ceiling);ceiling.connect(context.rawContext.destination);
+      const cfg=typeof buses!=='undefined'?buses[name].cfg:null,p=particles[name];const xyz=cfg?[cfg.x,cfg.y,cfg.z]:p.position;
+      const spatial=step===3&&isSpatial();
+      const pan=spatial?add(new Tone.Panner3D({context,panningModel:'HRTF',distanceModel:'inverse',refDistance:1,rolloffFactor:.12,positionX:xyz[0],positionY:xyz[1],positionZ:xyz[2]})):add(new Tone.Panner({context,pan:step===3?(cfg?.pan??p.pan):0}));pan.connect(output);
+      const options=name==='seasalt'?pad.get():name==='dust'?arp.get():name==='smoke'?bass.get():bells.get();
+      // Clone the map's voice settings into a separate context. Pausing this
+      // context preserves the sample without touching the map's transport.
+      delete options.context;
+      let synth;
+      if(name==='smoke')synth=add(new Tone.MonoSynth({...options,context}));
+      else synth=add(new Tone.PolySynth({context,voice:name==='sulfate'?Tone.FMSynth:Tone.Synth,options}));
+      synth.volume.value=({seasalt:-16,dust:-14,smoke:-10,sulfate:-18})[name];
+      if(name==='seasalt'){
+        const filter=add(new Tone.Filter({context,frequency:600,type:'lowpass'})),chorus=add(new Tone.Chorus({context,frequency:3,delayTime:3.5,depth:.6}));chorus.start();synth.chain(filter,chorus,pan);
+      }else if(name==='dust'){
+        const filter=add(new Tone.Filter({context,frequency:3200,type:'lowpass'})),delay=add(new Tone.PingPongDelay({context,delayTime:60/108*.75,feedback:.35,wet:.35}));synth.chain(filter,delay,pan);
+      }else synth.connect(pan);
+      const root=ROOT,t=context.now()+.05;
+      if(name==='seasalt')synth.triggerAttackRelease([root,root*1.5,root*2],1.6,t,.65);
+      if(name==='dust')[1,1.25,1.5,1.25].forEach((ratio,i)=>synth.triggerAttackRelease(root*2*ratio,.14,t+i*.28,.7));
+      if(name==='smoke')[0,.6].forEach(offset=>synth.triggerAttackRelease(root/2,.28,t+offset,.65));
+      if(name==='sulfate')[0,.8].forEach(offset=>synth.triggerAttackRelease(root*4,.55,t+offset,.5));
+      const current={context,nodes,output,state:'playing',end:t+(name==='seasalt'?6:4.5),timer:null};sample=current;samplePending=false;
+      current.timer=setInterval(()=>{if(sample===current&&current.state==='playing'&&context.currentTime>=current.end){stopSample();void startMusic();stageMessage('Sample finished. Play it again or choose another voice.');}},150);
+      stageMessage('Playing '+p.name.toLowerCase()+'.');sampleUI();
+    }catch(error){
+      for(const node of nodes)try{node.dispose();}catch{}
+      if(context){void context.close().catch(()=>{});context.dispose();}
+      if(request!==epoch)return;
+      samplePending=false;sample=null;stageMessage('Audio could not start. You can continue with the text, or try the sample again.');sampleUI();console.warn('Guide preview:',error);
+    }
+  }
+  // English presentation layer. The original audio files remain unchanged.
+  const names={seasalt:'Sea salt',dust:'Dust',smoke:'Smoke',sulfate:'Sulfates'};
+  const dictionary={
+    'Concierto':'Concert','Explorar':'Explore','Ver todo':'Reset view','Drone suave':'Soft drone',
+    'Ventana de escucha':'Listening radius','Detalles pequeños':'Quiet details',
+    'Modo de escucha':'Listening mode','Alejar mapa':'Zoom out','Acercar mapa':'Zoom in',
+    'Exploración sonora del mapa de aerosoles':'Interactive aerosol sound map',
+    'Escuchar':'Play','Pausar':'Pause','Activar exploración':'Start exploring','Pausar exploración':'Pause exploration',
+    'Grabar':'Record','Detener y guardar':'Stop and save','Audio: Espacial 3D':'Audio: Spatial 3D','Audio: Estéreo':'Audio: Stereo',
+    'Sal marina':'Sea salt','Polvo':'Dust','Humo':'Smoke','Sulfatos':'Sulfates','Todo':'All'
+  };
+  function translate(root){
+    if(root.nodeType===3){const raw=root.nodeValue,clean=raw.trim();if(dictionary[clean])root.nodeValue=raw.replace(clean,dictionary[clean]);return;}
+    if(root.nodeType!==1||root.tagName==='SCRIPT'||root.tagName==='STYLE')return;
+    const label=root.getAttribute('aria-label');if(dictionary[label])root.setAttribute('aria-label',dictionary[label]);
+    for(const child of root.childNodes)translate(child);
+  }
+  const uiStatus=document.createElement('p');uiStatus.id='ui-status';uiStatus.setAttribute('role','status');el('status').after(uiStatus);
+  const uiValues=document.createElement('p');uiValues.style.cssText='font-size:.85rem;color:#aebdca;padding:0 16px';el('info').after(uiValues);
+  for(const id of ['status','info','legend']){el(id).hidden=true;el(id).removeAttribute('aria-live');}
+  if(el('mu-help'))el('mu-help').textContent='Hover to listen. Scroll or use +/− to zoom; drag to move. Keyboard: arrows, +/−, Home. Escape pauses.';
+  if(el('mu-live')){el('mu-live').hidden=true;el('mu-live').removeAttribute('role');}
+  if(el('mu-values'))el('mu-values').hidden=true;
+  const uiLive=document.createElement('p');uiLive.setAttribute('role','status');uiLive.style.cssText='position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)';uiValues.after(uiLive);
+  let announceTimer,lastValues='';
+  function updateStatus(){
+    const raw=el('status').textContent;
+    const state=window.MUExplore?.getState();
+    let text;
+    if(/No se pudo|Falta|no es|error/i.test(raw))text='Something could not be loaded. Check your data and audio files.';
+    else if(typeof grid==='undefined'||!grid)text='Loading map…';
+    else if(state?.mode==='explore')text=state.running?'Explore the map to hear each region.':'Exploration paused.';
+    else text=typeof playing!=='undefined'&&playing?'Concert · scanning west to east':'Ready when you are. Press Play.';
+    if(uiStatus.textContent!==text)uiStatus.textContent=text;updateGlobalState();
+    if(state?.mode==='explore'){
+      const line=Object.entries(state.values).map(([n,v])=>`${names[n]||n}: ${v===0?'0':v.toPrecision(3)}`).join(' · ');
+      if(line!==lastValues){lastValues=line;uiValues.textContent=line;clearTimeout(announceTimer);announceTimer=setTimeout(()=>uiLive.textContent=line,350);}
+    }else {if(uiValues.textContent)uiValues.textContent='';lastValues='';}
+  }
+  translate(el('experience'));
+  const observer=new MutationObserver(records=>{
+    for(const m of records){if(m.type==='characterData')translate(m.target);else for(const n of m.addedNodes)translate(n);}
+    if(el('mu-data')){
+      const raw=el('mu-data').textContent;
+      if(raw.startsWith('Detalle fino activo'))el('mu-data').textContent='Fine detail active · visual intensity, not physical concentration.';
+      else if(raw.startsWith('Detalle fino no disponible'))el('mu-data').textContent='Fine maps unavailable. Using the overview grid. Check data/fine/.';
+      else if(raw.startsWith('Leyendo mapas finos'))el('mu-data').textContent='Loading fine detail…';
+    }
+    updateStatus();
+  });
+  observer.observe(el('experience'),{subtree:true,childList:true,characterData:true});updateStatus();
+
+
+})();
+</script></body></html>

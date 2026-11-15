@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explore · Musica Universalis</title>
+<style>
+:root{color-scheme:dark;--bg:#05070d;--fg:#eef1f8;--mut:#b4bccd;--line:#2b3347;--card:#0e1320;--acc:#ffd25a}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;height:100svh;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--bg);color:var(--fg);font:1rem/1.5 system-ui,sans-serif}
+a{color:var(--fg)}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:var(--acc);color:#000;padding:.5rem 1rem;z-index:9}
+button{font:inherit;font-weight:600;font-size:.9rem;min-height:44px;padding:.4rem 1rem;border-radius:99px;border:1px solid #ffffff55;background:#ffffff10;color:var(--fg);cursor:pointer}
+button:hover{background:#ffffff26}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 16px;border-bottom:1px solid var(--line)}
+.top h1{font-size:1rem;margin:0;letter-spacing:.06em;font-weight:600;margin-right:auto}
+.top label{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--mut)}
+input[type=range]{width:110px;accent-color:var(--acc);min-height:32px}
+#stage{position:relative;min-height:0;background:#000}
+#xmap{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#xmap.steer{cursor:crosshair}
+#xmap.drag{cursor:grabbing}
+#near{position:absolute;left:12px;top:12px;margin:0;padding:4px 12px;border-radius:99px;background:#000b;font-size:.85rem;pointer-events:none}
+#near:empty{display:none}
+#loading{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--mut);pointer-events:none}
+.bottom{display:flex;gap:16px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
+#mini{flex:none;width:clamp(150px,22vw,260px);aspect-ratio:16/9;border:2px solid #ffffff55;border-radius:6px;cursor:crosshair;touch-action:none}
+.side{min-width:0}
+.side h2{font-size:.8rem;margin:0 0 6px;color:var(--mut);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+#places{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+#help{margin:8px 0 0;font-size:.8rem;color:var(--mut)}
+@media (max-width:640px){.bottom{flex-direction:column;align-items:stretch}#mini{align-self:center}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#xmap">Skip to the map</a>
+<header class="top">
+  <h1>Explore</h1>
+  <div class="top" style="padding:0;border:0" role="group" aria-label="Map settings">
+    <button id="z-out">Zoom out</button><button id="z-in">Zoom in</button>
+    <button id="steer" aria-pressed="true">Hover to move: on</button>
+    <button id="z-whole">Whole map</button><button id="z-close">Close-up</button>
+    <label>Speed <input id="nav-speed" type="range" min="20" max="100" value="60"></label>
+  </div>
+  <a href="index.html">Back to the guide</a>
+</header>
+
+<div id="stage">
+  <canvas id="xmap" tabindex="0" role="application" aria-label="Map of Earth's aerosols, 19 August 2025. Drag or use arrow keys to move. Scroll or plus and minus to zoom." aria-describedby="help"></canvas>
+  <p id="near" aria-hidden="true"></p>
+  <p id="loading">Loading the HD map…</p>
+</div>
+
+<footer class="bottom">
+  <canvas id="mini" aria-hidden="true" title="Click or drag to move the view"></canvas>
+  <div class="side">
+    <h2>Places to visit</h2>
+    <ul id="places"></ul>
+    <p id="help">Move the mouse toward an edge to roam, keep it in the middle to stop (Esc turns this off) · drag also works · scroll to zoom · arrows or WASD · 0 close-up · Home whole map. Click the small map to jump.</p>
+  </div>
+</footer>
+<div id="live" class="skip" role="status" aria-live="polite"></div>
+
+<script>
+const PLACES = [
+  { n: "Hurricane Erin", x: .30, y: .35 }, { n: "Saharan dust plume", x: .50, y: .38 },
+  { n: "Spain wildfires", x: .49, y: .27 }, { n: "Southern Africa burning", x: .54, y: .53 },
+  { n: "Dust over Asia", x: .76, y: .27 }, { n: "Sulfates over East Asia", x: .78, y: .35 },
+];
+document.getElementById("places").innerHTML = PLACES.map((p, i) => `<li><button data-place="${i}">${p.n}</button></li>`).join("");
+</script>
+<script src="explore.js"></script>
+</body>
+</html>
