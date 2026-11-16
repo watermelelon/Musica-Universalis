@@ -739,3 +739,17 @@ recBtn.onclick = async () => {
     setTimeout(() => URL.revokeObjectURL(url), 120000);
   }
 };
+Object.assign(window, {
+  ROOT,
+  buses,
+  pad,
+  arp,
+  bass,
+  bells
+});
+
+Object.defineProperty(window, "playing", {
+  configurable: true,
+  get: () => playing,
+  set: value => { playing = Boolean(value); }
+});
