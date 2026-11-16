@@ -3,18 +3,34 @@ import { cpSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const project = fileURLToPath(new URL('.', import.meta.url));
+const publicRoot = fileURLToPath(new URL('./public/', import.meta.url));
+const distRoot = fileURLToPath(new URL('./dist/', import.meta.url));
+const entryHtml = fileURLToPath(
+  new URL('./public/index.html', import.meta.url)
+);
+
 export default defineConfig({
-  root: fileURLToPath(new URL('./public', import.meta.url)),
+  root: publicRoot,
   base: './',
   publicDir: false,
-  server: { fs: { allow: [project] } },
-  build: { outDir: '../dist', emptyOutDir: true },
+
+  server: {
+    fs: { allow: [project] }
+  },
+
+  build: {
+    outDir: '../dist',
+    emptyOutDir: true
+  },
+
   plugins: [{
-    name: 'copy-grid-and-images',
+    name: 'copy-static-assets',
+
     writeBundle() {
-      for (const directory of ['data', 'img']) {
-        cpSync(new URL(`./public/${directory}`, import.meta.url), new URL(`./dist/${directory}`, import.meta.url), { recursive: true });
-      }
-    },
-  }],
+      cpSync(publicRoot, distRoot, {
+        recursive: true,
+        filter: (source) => source !== entryHtml
+      });
+    }
+  }]
 });
