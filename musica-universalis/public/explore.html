@@ -24,6 +24,23 @@ input[type=range]{width:110px;accent-color:var(--acc);min-height:32px}
 #xmap.drag{cursor:grabbing}
 #near{position:absolute;left:12px;top:12px;margin:0;padding:4px 12px;border-radius:99px;background:#000b;font-size:.85rem;pointer-events:none}
 #near:empty{display:none}
+#cp{position:absolute;top:0;right:0;bottom:0;width:min(360px,100%);overflow:auto;padding:18px 20px;background:#0b1020f2;border-left:1px solid var(--line);z-index:2}
+#cp h2{font-size:1.4rem;margin:.2em 0 .6em;line-height:1.2}#cp h2:focus{outline:none}
+#cp h3{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:1.1em 0 .3em}
+#cp p,#cp li{margin:.2em 0;color:#dfe5f1}#cp ul{padding-left:1.1em;margin:.2em 0}
+#cp .kicker{margin:0;font-size:.8rem;color:var(--acc)}#cp .src{font-size:.75rem;color:var(--mut);margin-top:1.2em}
+#cp .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:1em}
+button.primary{background:var(--fg);color:#05070d}
+@media (max-width:700px){#cp{top:auto;left:0;width:auto;max-height:58%;border-left:0;border-top:1px solid var(--line)}}
+#probe{position:absolute;left:0;top:0;display:none;border:2px solid #ffdc79;border-radius:50%;pointer-events:none;box-shadow:0 0 0 1px #000a}
+.sset{margin-top:6px;font-size:.85rem}.sset summary{cursor:pointer;min-height:32px;color:var(--mut)}
+.sset label{display:inline-flex;align-items:center;gap:8px;margin:4px 16px 4px 0}.sset p{margin:4px 0;color:var(--mut)}
+#meters{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.chip{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;background:#000b;font-size:.78rem}
+.chip i{display:block;width:46px;height:6px;border-radius:9px;background:#ffffff33;overflow:hidden}.chip b{display:block;height:100%}
+.chip em{font-style:normal;color:var(--acc);min-width:1em}.chip.on{outline:2px solid var(--acc)}
+#toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);margin:0;padding:8px 18px;border-radius:99px;background:var(--acc);color:#000;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:3}
+#toast.show{opacity:1}
 #loading{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--mut);pointer-events:none}
 .bottom{display:flex;gap:16px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
 #mini{flex:none;width:clamp(150px,22vw,260px);aspect-ratio:16/9;border:2px solid #ffffff55;border-radius:6px;cursor:crosshair;touch-action:none}
@@ -42,6 +59,9 @@ input[type=range]{width:110px;accent-color:var(--acc);min-height:32px}
   <div class="top" style="padding:0;border:0" role="group" aria-label="Map settings">
     <button id="z-out">Zoom out</button><button id="z-in">Zoom in</button>
     <button id="steer" aria-pressed="true">Hover to move: on</button>
+    <button id="snd" aria-pressed="false">Sound: off</button>
+    <button id="spatial" aria-pressed="false">Spatial: off</button>
+    <label>Volume <input id="vol" type="range" min="0" max="100" value="80"></label>
     <button id="z-whole">Whole map</button><button id="z-close">Close-up</button>
     <label>Speed <input id="nav-speed" type="range" min="20" max="100" value="60"></label>
   </div>
@@ -51,27 +71,42 @@ input[type=range]{width:110px;accent-color:var(--acc);min-height:32px}
 <div id="stage">
   <canvas id="xmap" tabindex="0" role="application" aria-label="Map of Earth's aerosols, 19 August 2025. Drag or use arrow keys to move. Scroll or plus and minus to zoom." aria-describedby="help"></canvas>
   <p id="near" aria-hidden="true"></p>
+  <div id="probe" aria-hidden="true"></div>
+  <div id="meters" aria-hidden="true"></div>
+  <p id="toast" role="status"></p>
   <p id="loading">Loading the HD map…</p>
+  <aside id="cp" role="dialog" aria-labelledby="cp-title" hidden>
+    <p class="kicker" id="cp-kicker"></p>
+    <h2 id="cp-title" tabindex="-1"></h2>
+    <h3>What is happening</h3><p id="cp-what"></p>
+    <h3>Why it happens</h3><p id="cp-why"></p>
+    <h3>Listen for</h3><ul id="cp-listen"></ul>
+    <p class="src">Source: NASA Scientific Visualization Studio, GEOS Aerosols (SVS 5669).</p>
+    <div class="row"><button id="cp-close" class="primary">Keep exploring</button><button id="cp-next">Next checkpoint</button></div>
+  </aside>
 </div>
 
 <footer class="bottom">
   <canvas id="mini" aria-hidden="true" title="Click or drag to move the view"></canvas>
   <div class="side">
-    <h2>Places to visit</h2>
+    <h2>Places to visit · <span id="progress"></span></h2>
     <ul id="places"></ul>
-    <p id="help">Move the mouse toward an edge to roam, keep it in the middle to stop (Esc turns this off) · drag also works · scroll to zoom · arrows or WASD · 0 close-up · Home whole map. Click the small map to jump.</p>
+    <details class="sset"><summary>Listening settings</summary>
+      <label>Listening radius <input id="set-radius" type="range" min="0" max="32" value="8"> <output id="set-radius-val">8 px</output></label>
+      <label>Small details <input id="set-detail" type="range" min="0" max="100" value="65"></label>
+      <label><input id="set-drone" type="checkbox" checked> Soft drone</label>
+      <p id="sound-data" role="status"></p>
+      <p id="perf"></p>
+    </details>
+    <p id="help">Press Sound to listen: with the mouse over the map you hear what is under the cursor (the ring), with the keyboard what is under the crosshair · click a marker to learn what is happening there · move the mouse toward an edge to roam, keep it in the middle to stop (Esc turns this off) · drag also works · scroll to zoom · arrows or WASD · 0 close-up · Home whole map. Click the small map to jump.</p>
   </div>
 </footer>
 <div id="live" class="skip" role="status" aria-live="polite"></div>
+<div id="live-sound" class="skip" role="status" aria-live="polite"></div>
 
-<script>
-const PLACES = [
-  { n: "Hurricane Erin", x: .30, y: .35 }, { n: "Saharan dust plume", x: .50, y: .38 },
-  { n: "Spain wildfires", x: .49, y: .27 }, { n: "Southern Africa burning", x: .54, y: .53 },
-  { n: "Dust over Asia", x: .76, y: .27 }, { n: "Sulfates over East Asia", x: .78, y: .35 },
-];
-document.getElementById("places").innerHTML = PLACES.map((p, i) => `<li><button data-place="${i}">${p.n}</button></li>`).join("");
-</script>
+<script src="checkpoints.js"></script>
 <script src="explore.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script src="explore-sound.js"></script>
 </body>
 </html>
