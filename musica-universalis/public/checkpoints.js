@@ -27,3 +27,4 @@ const PLACES = [
     why: "It is the same process as Kilauea: volcanic sulfur becomes sulfate particles that the wind spreads out.",
     listen: ["Listen for the bells above you, then compare them with Kilauea.", "Smoke from the Spanish fires, to the west, plays low underneath."] },
 ];
+window.PLACES = PLACES;

@@ -521,6 +521,39 @@ button{font-family:inherit;color:var(--text);border-color:rgba(201,241,215,.36);
 #experience #sonification-map:not([hidden]){position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;background:#05070c}
 #experience #concert-to-free{min-height:58px;display:flex;justify-content:center;align-items:center;text-decoration:none;font-weight:700}
 @media(max-width:650px){#experience .concert-algorithm{padding:16px 12px}#experience #concert-algorithm{font-size:.91rem}}
+
+/* === FINAL NAVIGATION: clear concert and exploration entry points === */
+#welcome .welcome-actions{display:flex!important;flex-direction:column;align-items:stretch!important;gap:20px!important;margin-top:25px!important}
+#welcome .welcome-actions-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+#welcome .welcome-actions-top .cta{display:inline-flex;flex:none!important;min-height:55px;padding:13px 23px;gap:19px;font-size:13px;letter-spacing:.055em;white-space:normal;text-align:left}
+#welcome .welcome-actions-top .transcript{margin:0;max-width:100%;position:relative}
+#welcome .welcome-actions-top .transcript summary{border:0;color:#cadacc;font-size:13px;cursor:pointer;padding:10px 0}
+#welcome .welcome-actions-top .transcript[open]{flex:1 0 100%}
+#welcome .welcome-actions-top .transcript p{max-height:210px;overflow-y:auto;max-width:100%;font-size:13px;line-height:1.65;color:#c6d4cc}
+#welcome .welcome-choices-label{margin:2px 0 -6px;color:#a2b7a8;font:700 10px/1.4 'Oxanium',sans-serif;letter-spacing:.18em}
+#welcome .welcome-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+#welcome .welcome-path{width:100%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;text-align:left;border:1px solid rgba(208,251,223,.24);border-radius:17px;padding:20px 19px;min-height:141px;color:#e9f8ec;background:linear-gradient(145deg,rgba(22,43,30,.62),rgba(11,26,19,.67));text-decoration:none;box-shadow:none;transition:background .2s,border-color .2s,transform .2s;cursor:pointer;font-family:inherit}
+#welcome .welcome-path-concert{background:linear-gradient(145deg,rgba(48,30,64,.56),rgba(23,18,35,.8));border-color:rgba(218,191,255,.27)}
+#welcome .welcome-path:hover,#welcome .welcome-path:focus-visible{transform:translateY(-2px);border-color:#c8ff96;background:rgba(36,67,43,.7);color:#fff}
+#welcome .welcome-path-concert:hover,#welcome .welcome-path-concert:focus-visible{border-color:#d0a7ff;background:rgba(66,39,84,.7)}
+#welcome .welcome-path-kicker{font:700 10px/1.4 'Oxanium',sans-serif;letter-spacing:.18em;color:#b7d4bb}
+#welcome .welcome-path-concert .welcome-path-kicker{color:#d4b8ec}
+#welcome .welcome-path-title{font:750 clamp(16px,1.9vw,20px)/1.28 'Oxanium',sans-serif;letter-spacing:-.02em;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
+#welcome .welcome-path-title span{color:#baff96;font-size:18px}
+#welcome .welcome-path-concert .welcome-path-title span{color:#d4a8ff}
+#welcome .welcome-path-description{font:400 12px/1.55 Manrope,Arial,sans-serif;color:#bfcfc1}
+#experience.concert-live .concert-handoff-actions #concert-to-free{display:inline-flex;align-items:center;justify-content:center;gap:13px;min-height:56px;padding:15px 27px;border-radius:999px;text-align:center;font:750 12px/1.35 'Oxanium',sans-serif;letter-spacing:.085em;text-decoration:none}
+.footer .footer-explore-link{display:inline-flex;align-items:center;gap:8px;margin:12px 14px 10px 0;color:#c8ff96;text-decoration:underline;text-underline-offset:5px;font-size:12px}
+.footer .footer-explore-link:hover{color:#fff}
+@media(max-width:700px){
+  #welcome .welcome-paths{grid-template-columns:1fr;gap:9px}
+  #welcome .welcome-path{min-height:116px;padding:15px 17px;gap:6px}
+  #welcome .welcome-actions-top{align-items:flex-start;flex-direction:column;gap:2px}
+  #welcome .welcome-actions-top .cta{width:100%;justify-content:space-between}
+  #welcome .welcome-choices-label{margin:3px 0 -6px}
+  #experience.concert-live .concert-handoff-actions #concert-to-free{width:100%;min-height:58px}
+}
+
 </style><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script></head><body class="gate-active">
 <div class="ambient-gradient" aria-hidden="true"></div>
 <div class="reference-currents" aria-hidden="true"></div>
@@ -573,12 +606,24 @@ button{font-family:inherit;color:var(--text);border-color:rgba(201,241,215,.36);
     </div>
     <p id="narration-status" role="status" class="audio-status"></p>
     <div class="welcome-actions">
-      <button id="start-experience" class="primary cta" type="button">START <span aria-hidden="true">↗</span></button>
-      <div class="welcome-secondary-actions">
-        <button id="skip-intro" class="quiet next-link" type="button">Explore map <span aria-hidden="true">↗</span></button>
+      <div class="welcome-actions-top">
+        <button id="start-experience" class="primary cta" type="button">START GUIDED EXPERIENCE <span aria-hidden="true">↗</span></button>
         <details class="transcript"><summary>Read introduction <span aria-hidden="true">↗</span></summary>
           <p id="intro-transcript">Welcome to Musica Universalis. Long ago, thinkers imagined that the universe held a hidden harmony: musica universalis, the music of the spheres. Today, we use that poetic idea to listen to something real. NASA visualizations reveal patterns of particles moving through Earth's atmosphere: dust, sea salt, smoke and sulfates. We assign each a musical voice, so invisible movements become an experience you can hear. This is sonification, not a recording of the particles themselves. Are you ready to listen to Earth?</p>
         </details>
+      </div>
+      <p class="welcome-choices-label">OR CHOOSE YOUR EXPERIENCE</p>
+      <div class="welcome-paths" role="group" aria-label="Choose an experience">
+        <a id="welcome-explore-map" class="welcome-path welcome-path-map" href="explore.html">
+          <span class="welcome-path-kicker">01 · INTERACTIVE</span>
+          <span class="welcome-path-title">Explore the Map <span aria-hidden="true">↗</span></span>
+          <span class="welcome-path-description">Explore Earth's aerosols at your own pace.</span>
+        </a>
+        <button id="skip-intro" class="welcome-path welcome-path-concert" type="button">
+          <span class="welcome-path-kicker">02 · LISTEN</span>
+          <span class="welcome-path-title">Experience the Concert <span aria-hidden="true">↗</span></span>
+          <span class="welcome-path-description">Hear Earth's four aerosol voices together.</span>
+        </button>
       </div>
     </div>
   </div>
@@ -635,11 +680,11 @@ button{font-family:inherit;color:var(--text);border-color:rgba(201,241,215,.36);
     </div>
     <p id="legend" aria-live="polite"></p><p id="status" aria-live="polite"></p><p id="info"></p>
   </div>
-  <div class="concert-handoff-actions"><button id="concert-return" type="button" class="quiet">← BACK</button><a class="primary" id="concert-to-free" href="explore.html">NEXT <span aria-hidden="true">↗</span></a></div>
+  <div class="concert-handoff-actions"><button id="concert-return" type="button" class="quiet">← BACK</button><a class="primary" id="concert-to-free" href="explore.html" aria-label="Go to Exploration Mode">GO TO EXPLORATION MODE <span aria-hidden="true">↗</span></a></div>
   <button id="concert-back" class="sr-only" type="button" tabindex="-1">Back to guide</button>
 </section>
 </main>
-<footer class="shell footer">Based on <a href="https://svs.gsfc.nasa.gov/5669/">NASA’s GEOS aerosol visualization</a>.<br>Musica Universalis is an independent educational experience.<br><button id="star-motion" class="quiet" aria-pressed="true">Pause stars</button></footer>
+<footer class="shell footer">Based on <a href="https://svs.gsfc.nasa.gov/5669/">NASA’s GEOS aerosol visualization</a>.<br>Musica Universalis is an independent educational experience.<br><a id="footer-explore-map" class="footer-explore-link" href="explore.html">Explore the Map <span aria-hidden="true">↗</span></a><button id="star-motion" class="quiet" aria-pressed="true">Pause stars</button></footer>
 <!-- ===============================================================
      EDIT YOUR FILE PATHS HERE — paths are relative to this index.html.
      Keep the audio folder alongside index.html, or change the URLs.
@@ -682,13 +727,15 @@ window.MUSICA_FILES = Object.freeze({
   document.getElementById('concert-audio').src=paths.concertNarration;
   document.getElementById('landing-music').src=paths.backgroundMusic;
   document.getElementById('concert-to-free').href=paths.freeExplorePage;
+  document.getElementById('welcome-explore-map').href=paths.freeExplorePage;
+  document.getElementById('footer-explore-map').href=paths.freeExplorePage;
   // For consistency, any legacy explorer entry links use the free route.
   document.querySelectorAll('a.external-explore').forEach(a=>a.href=paths.freeExplorePage);
 })();
 </script>
 <p id="audio-announcement" class="sr-only" role="status" aria-atomic="true"></p>
 <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
-<script src="app.js"></script><script src="explore.js"></script>
+<script type="module" src="./app.js"></script>
 <script>
 (() => {
   'use strict';
@@ -837,7 +884,7 @@ window.MUSICA_FILES = Object.freeze({
     try{try{await prepareWave();}catch{}await narration.play();if(request!==introEpoch)return;introPending=false;introUI(true);el('narration-status').textContent='Playing introduction.';updateGlobalState();}
     catch{if(request!==introEpoch)return;stopIntro();el('narration-status').textContent='Introduction audio is unavailable. You can read the transcript or continue without audio.';}
   };
-  narration.onended=()=>{introPending=false;introFinished=true;introUI(false);updateIntroProgress();el('narration-status').textContent='Introduction finished. Replay it, start the guide, or explore the map.';updateGlobalState();};
+  narration.onended=()=>{introPending=false;introFinished=true;introUI(false);updateIntroProgress();el('narration-status').textContent='Introduction finished. Start the guide, explore the map, or experience the concert.';updateGlobalState();};
   narration.ontimeupdate=updateIntroProgress;narration.onloadedmetadata=updateIntroProgress;
   narration.onerror=()=>{stopIntro();el('narration-status').textContent='Introduction audio is unavailable. Read the introduction below, or continue without audio.';};
   narration.onpause=()=>{introUI(false);updateGlobalState();};
@@ -961,7 +1008,9 @@ window.MUSICA_FILES = Object.freeze({
     if(window.MUCinema)window.MUCinema.showConcert();
   }
   el('start-experience').onclick=()=>showStep(0);el('skip-intro').onclick=showMap;el('show-guide').onclick=()=>showStep(2);el('stage-skip').onclick=showMap;
-  el('concert-to-free').onclick=()=>{stopAll(true);};
+  ['concert-to-free','welcome-explore-map','footer-explore-map'].forEach(id=>{
+    el(id).addEventListener('click',()=>stopAll(true));
+  });
   el('stage-header-back').onclick=()=>el('stage-back').click();
   el('concert-return').onclick=()=>showStep(2);
   el('welcome-back').onclick=()=>{stopAll(true);enterScreen('welcome');el('welcome').hidden=true;document.querySelector('header.utility').hidden=true;if(window.MUCinema?.backToGate)window.MUCinema.backToGate();};
