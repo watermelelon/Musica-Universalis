@@ -1,4 +1,19 @@
-// v8: volumen según la cantidad de aerosol (por nota y por especie) + contraste ajustable
+
+// v8.1 OPTIMIZADO — compatible con los IDs #map #play #rec #mode #solo #rhythm #drop #dyn
+// Mantiene la musicalización del v8, pero adelanta los cálculos pesados y reduce carga DSP.
+// Mantén la importación de Tone.js ANTES de este archivo. Requiere data/grid.json e img/aerosols.jpg.
+
+// AJUSTES DE RENDIMIENTO — si aún hay chasquidos, prueba quality: "lite".
+const PERFORMANCE = {
+  quality: "balanced",       // "balanced" = 3D HRTF en cuatro aerosoles | "lite" = panoramización ligera
+  reverbSeconds: 3.5,        // antes: 8 s de convolución (mucho más costosa)
+  scheduleAhead: 0.22,       // Tone.js prepara eventos con 220 ms de anticipación
+  useStaticMapBackdrop: true,  // el mapa se dibuja con CSS; el canvas sólo dibuja la línea
+};
+const IS_LITE = PERFORMANCE.quality === "lite";
+const MAP_GRID_PATH = "data/grid.json";
+const MAP_IMAGE_PATH = "img/aerosols.jpg";
+
 
 // ---- Raíz: el año terrestre llevado 32 octavas arriba (~136.10 Hz) ----
 const EARTH_YEAR_S = 365.256 * 86400;
@@ -24,6 +39,11 @@ let DROP = 0.7;     // 0 = sin entradas; 1 = completas
 let DYN = 0.7;      // contraste de volumen: 0 = casi plano; 1 = muy contrastado
 
 Tone.Transport.bpm.value = BPM;
+// Latencia algo mayor a cambio de una reproducción más estable.
+// Ajustar la anticipación NO altera el BPM ni la duración de las notas.
+const toneContext = Tone.getContext();
+toneContext.lookAhead = Math.max(toneContext.lookAhead || 0, PERFORMANCE.scheduleAhead);
+const BEAT_SECONDS = 60 / BPM;
 
 // ---- Volumen según cantidad ----
 // norm: valor de celda (0.15-1) -> 0-1
@@ -46,61 +66,73 @@ function pick(rowFrac, octBase, span) {
 
 // ---- Salida maestra ----
 const limiter = new Tone.Limiter(-1).toDestination();
-const master = new Tone.Compressor(-20, 3).connect(limiter);
-const reverb = new Tone.Reverb({ decay: 8, wet: 1 }).connect(master);
+const outputGain = new Tone.Gain(0).connect(limiter);
+const master = new Tone.Compressor(-20, 3).connect(outputGain);
+const reverb = new Tone.Reverb({ decay: PERFORMANCE.reverbSeconds, wet: 1 }).connect(master);
+// Se genera DURANTE LA CARGA, nunca dentro del primer clic de reproducción.
 
 // ---- Un bus por especie: estéreo y 3D en paralelo, solo uno suena a la vez ----
 let spatialMode = true;
 
 function makeBus(send, cfg) {
   const input = new Tone.Gain(1);
-  const soloGain = new Tone.Gain(1);     // botones de solo
-  const levelGain = new Tone.Gain(1);    // volumen según la cantidad de aerosol
-  const pumpGain = new Tone.Gain(1);     // sidechain
+  const soloGain = new Tone.Gain(1);
+  const levelGain = new Tone.Gain(1);
+  const pumpGain = new Tone.Gain(1);
   const stereo = new Tone.Panner(cfg.pan);
-  const spatial = new Tone.Panner3D({
+  // Los dos sonidos centrales NO necesitan HRTF. En calidad lite los cuatro
+  // aerosoles conservan izquierda/derecha con Tone.Panner (sin HRTF).
+  const useHRTF = cfg.isAerosol && !IS_LITE;
+  const spatial = useHRTF ? new Tone.Panner3D({
     panningModel: "HRTF", distanceModel: "inverse",
     refDistance: 1, rolloffFactor: 0.12,
     positionX: cfg.x, positionY: cfg.y, positionZ: cfg.z,
-  });
-  const outStereo = new Tone.Gain(spatialMode ? 0 : 1);
-  const outSpatial = new Tone.Gain(spatialMode ? SPATIAL_BOOST : 0);
+  }) : null;
+  const outStereo = new Tone.Gain(spatial && spatialMode ? 0 : 1);
+  const outSpatial = spatial ? new Tone.Gain(spatialMode ? SPATIAL_BOOST : 0) : null;
   const sendGain = new Tone.Gain(send);
 
   input.chain(soloGain, levelGain, pumpGain);
-  pumpGain.connect(stereo);  stereo.connect(outStereo);
-  pumpGain.connect(spatial); spatial.connect(outSpatial);
-  outStereo.connect(master);  outSpatial.connect(master);
-  outStereo.connect(sendGain); outSpatial.connect(sendGain);
+  stereo.connect(outStereo);
+  outStereo.connect(master);
+  outStereo.connect(sendGain);
+  if (spatial) {
+    spatial.connect(outSpatial);
+    outSpatial.connect(master);
+    outSpatial.connect(sendGain);
+  }
   sendGain.connect(reverb);
-
-  return { input, soloGain, levelGain, pumpGain, stereo, spatial, outStereo, outSpatial, cfg };
+  // Importante: sólo una rama recibe audio (la otra no procesa las notas).
+  pumpGain.connect(spatial && spatialMode ? spatial : stereo);
+  return { input, soloGain, levelGain, pumpGain, stereo, spatial,
+           outStereo, outSpatial, cfg };
 }
 
 // ESCENARIO FIJO (metros: x = izquierda(-)/derecha(+), y = abajo(-)/arriba(+), z = frente (-))
 const buses = {
-  drums:   makeBus(0.12, { x: 0,    y: 0,    z: -2,   pan: 0,     drift: 0 }),
-  drone:   makeBus(0.40, { x: 0,    y: -1.5, z: -3,   pan: 0,     drift: 0 }),
-  smoke:   makeBus(0.15, { x: 0,    y: -2.5, z: -1.5, pan: 0,     drift: 1 }),
-  seasalt: makeBus(0.55, { x: -4.5, y: 0.5,  z: -4,   pan: -0.65, drift: 3 }),
-  dust:    makeBus(0.35, { x: 4.5,  y: 0.5,  z: -3.5, pan: 0.65,  drift: 3 }),
-  sulfate: makeBus(0.60, { x: -1.5, y: 3,    z: -3,   pan: -0.2,  drift: 2 }),
+  drums:   makeBus(0.12, { x: 0,    y: 0,    z: -2,   pan: 0,     drift: 0, isAerosol: false }),
+  drone:   makeBus(0.40, { x: 0,    y: -1.5, z: -3,   pan: 0,     drift: 0, isAerosol: false }),
+  smoke:   makeBus(0.15, { x: 2.0,  y: -2.5, z: -1.5, pan: 0.3,   drift: 1, isAerosol: true }),
+  seasalt: makeBus(0.55, { x: -4.5, y: -1.6, z: -4,  pan: -0.65, drift: 3, isAerosol: true }),
+  dust:    makeBus(0.35, { x: 4.5,  y: 2,    z: -3.5, pan: 0.65,  drift: 3, isAerosol: true }),
+  sulfate: makeBus(0.60, { x: -3,   y: 3,    z: -3,  pan: -0.5,  drift: 2, isAerosol: true }),
 };
 
 function place(bus, lon, time) {
   const c = bus.cfg;
   const pan = Math.max(-1, Math.min(1, c.pan + lon * c.drift * MOTION * 0.15));
   bus.stereo.pan.rampTo(pan, 0.6, time);
-  bus.spatial.positionX.rampTo(c.x + lon * c.drift * MOTION, 0.6, time);
+  if (bus.spatial) bus.spatial.positionX.rampTo(c.x + lon * c.drift * MOTION, 0.6, time);
 }
 
 // ---- SAL MARINA: pad espacial ----
 const padFilter = new Tone.Filter(600, "lowpass");
 const chorus = new Tone.Chorus(3, 3.5, 0.6).start();
 const pad = new Tone.PolySynth(Tone.Synth, {
-  oscillator: { type: "fatsawtooth", count: 3, spread: 28 },
-  envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 4 },
+  oscillator: { type: "fatsawtooth", count: IS_LITE ? 1 : 2, spread: 28 },
+  envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 3 },
 });
+pad.maxPolyphony = IS_LITE ? 6 : 10;
 pad.volume.value = VOL.pad;
 pad.chain(padFilter, chorus, buses.seasalt.input);
 
@@ -112,6 +144,7 @@ const arp = new Tone.PolySynth(Tone.Synth, {
   oscillator: { type: "pwm", modulationFrequency: 0.4 },
   envelope: { attack: 0.005, decay: 0.18, sustain: 0, release: 0.3 },
 });
+arp.maxPolyphony = 6;
 arp.volume.value = VOL.arp;
 arp.chain(arpFilter, arpDelay, buses.dust.input);
 
@@ -120,6 +153,7 @@ const bells = new Tone.PolySynth(Tone.FMSynth, {
   harmonicity: 3.01, modulationIndex: 6,
   envelope: { attack: 0.01, decay: 1.4, sustain: 0, release: 2.5 },
 });
+bells.maxPolyphony = 6;
 bells.volume.value = VOL.bells;
 bells.connect(buses.sulfate.input);
 
@@ -157,9 +191,10 @@ crash.volume.value = VOL.crash;
 crash.chain(new Tone.Filter(4500, "highpass"), buses.drums.input);
 
 const stab = new Tone.PolySynth(Tone.Synth, {
-  oscillator: { type: "fatsawtooth", count: 3, spread: 30 },
+  oscillator: { type: "fatsawtooth", count: IS_LITE ? 1 : 2, spread: 30 },
   envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 1.2 },
 });
+stab.maxPolyphony = 6;
 stab.volume.value = VOL.stab;
 stab.chain(new Tone.Filter(2500, "lowpass"), buses.drums.input);
 
@@ -206,18 +241,40 @@ let lastLabel = "–";
 const NAMES = ["seasalt", "dust", "smoke", "sulfate"];
 const SHORT = { seasalt: "sal", dust: "polvo", smoke: "humo", sulfate: "sulfatos" };
 
+// BOOT: una lectura por celda, con sólo tres máximos por columna.
+const columnSums = {}, columnMax = {};
 function precompute() {
   for (const name of NAMES) {
-    tops[name] = [];
+    const layer = grid.layers[name];
+    const out = new Array(grid.cols);
+    const sums = new Float64Array(grid.cols);
+    const maxima = new Float64Array(grid.cols);
     for (let c = 0; c < grid.cols; c++) {
-      const arr = [];
+      let aV = 0.15, bV = 0.15, dV = 0.15;
+      let aR = -1, bR = -1, dR = -1;
+      let total = 0, max = 0;
       for (let r = 0; r < grid.rows; r++) {
-        const v = grid.layers[name][r][c];
-        if (v > 0.15) arr.push({ row: r, val: v });
+        const v = +layer[r][c] || 0;
+        total += v;
+        if (v > max) max = v;
+        if (v <= 0.15) continue;
+        if (v > aV) {
+          dV = bV; dR = bR; bV = aV; bR = aR; aV = v; aR = r;
+        } else if (v > bV) {
+          dV = bV; dR = bR; bV = v; bR = r;
+        } else if (v > dV) { dV = v; dR = r; }
       }
-      arr.sort((a, b) => b.val - a.val);
-      tops[name].push(arr.slice(0, 3));
+      const best = [];
+      if (aR >= 0) best.push({row:aR,val:aV});
+      if (bR >= 0) best.push({row:bR,val:bV});
+      if (dR >= 0) best.push({row:dR,val:dV});
+      out[c] = best;
+      sums[c] = total;
+      maxima[c] = max;
     }
+    tops[name] = out;
+    columnSums[name] = sums;
+    columnMax[name] = maxima;
   }
 }
 
@@ -225,12 +282,7 @@ function precompute() {
 // normalizado por especie y suavizado. 0 = nada, 1 = lo más denso que tiene esa especie en el mapa.
 function computePresence() {
   for (const name of NAMES) {
-    const sums = [];
-    for (let c = 0; c < grid.cols; c++) {
-      let s = 0;
-      for (let r = 0; r < grid.rows; r++) s += grid.layers[name][r][c];
-      sums.push(s);
-    }
+    const sums = columnSums[name];
     const sorted = [...sums].sort((a, b) => a - b);
     const p95 = sorted[Math.floor(0.95 * (sorted.length - 1))] || 1;
     const raw = sums.map(s => Math.min(1, s / p95));
@@ -250,14 +302,8 @@ function computeEnergy() {
   for (let c = 0; c < grid.cols; c++) {
     let sum = 0, n = 0;
     for (const name of NAMES) {
-      let colSum = 0, mx = 0;
-      for (let r = 0; r < grid.rows; r++) {
-        const v = grid.layers[name][r][c];
-        colSum += v;
-        if (v > mx) mx = v;
-      }
-      sum += colSum * (ENERGY_W[name] ?? 1);
-      if (mx > 0.15) n++;
+      sum += columnSums[name][c] * (ENERGY_W[name] ?? 1);
+      if (columnMax[name][c] > 0.15) n++;
     }
     dens.push(sum);
     mix.push(n);
@@ -266,13 +312,25 @@ function computeEnergy() {
   const p95 = sorted[Math.floor(0.95 * (sorted.length - 1))] || 1;
   const raw = dens.map((d, c) =>
     Math.min(1, 0.6 * Math.min(1, d / p95) + 0.4 * Math.max(0, mix[c] - 1) / 3));
-  E = raw.map((_, c) => {
-    let s = 0, k = 0;
-    for (let j = -1; j <= 1; j++) {
-      const i = c + j;
-      if (i >= 0 && i < raw.length) { s += raw[i]; k++; }
+  const AVERAGE_RADIUS = 4; // 4 columns on each side + current
+
+E = raw.map((_, c) => {
+  let sum = 0;
+  let count = 0;
+
+  for (let offset = -AVERAGE_RADIUS;
+       offset <= AVERAGE_RADIUS;
+       offset++) {
+
+    const i = c + offset;
+
+    if (i >= 0 && i < raw.length) {
+      sum += raw[i];
+      count++;
     }
-    return s / k;
+  }
+
+  return count > 0 ? sum / count : 0;
   });
 }
 
@@ -340,7 +398,7 @@ function hitMoment(time, beat) {
   if (DROP < 0.03) return;
   const v = DROP;
   crash.triggerAttackRelease("2n", time, 0.8 * v);
-  stab.triggerAttackRelease([ROOT * 2, ROOT * 2 * 5 / 4, ROOT * 2 * 3 / 2, ROOT * 4], "2n", time, 0.8 * v);
+  stab.triggerAttackRelease([ROOT * 2, ROOT * 2 * 3 / 2], "4n", time, 0.7 * v);
   bass.triggerAttackRelease(ROOT / 2, "2n", time, v);
   if (KEPLER_SUSPENSION) {
     bells.triggerAttackRelease(ROOT * 4 * KEPLER_EARTH, "8n", time, 0.5 * v);   // Fa (16:15)
@@ -363,10 +421,29 @@ function playPad(c, L, time) {
   const [num, den] = RATIOS[idx];
   const f = ROOT * (num / den);
   lastLabel = `${num}:${den}`;
-  const chord = [f, f * 3 / 2, f * 2];
+  const chord = [
+  f,          // Root
+  f * 3 / 2   // Perfect fifth
+];
+
   if (L >= 0.5) chord.push(f * 5 / 4 * 2);
   // el pad suena fuerte donde hay mucha sal marina y casi no se oye donde no hay
-  pad.triggerAttackRelease(chord, "1m", time, 0.75 * dyn(presence.seasalt[c], 1));
+  pad.triggerAttackRelease(
+  chord,
+  "2n",
+  time,
+  0.65
+);
+}
+
+// BOOT: convertir las posiciones de aerosol en frecuencias UNA SOLA VEZ.
+let notePlan = [];
+function buildNotePlan() {
+  notePlan = Array.from({length: grid.cols}, (_, c) => ({
+    bass: tops.smoke[c][0] ? pick(tops.smoke[c][0].row / grid.rows, -1, 1) : null,
+    arp: tops.dust[c].map(n => pick(n.row / grid.rows, 1, 2)),
+    bells: tops.sulfate[c][0] ? pick(tops.sulfate[c][0].row / grid.rows, 2, 2) : null,
+  }));
 }
 
 // ---- Secuenciador: cada columna = 1 pulso = 4 semicorcheas ----
@@ -386,7 +463,7 @@ function tick(time) {
   const building = k > 0;
   const groove = L >= TIER_GROOVE;
   const full = L >= TIER_FULL;
-  const beat = Tone.Time("4n").toSeconds();
+  const beat = BEAT_SECONDS;
 
   if (step === 0) {
     for (const n of NAMES) {
@@ -397,7 +474,11 @@ function tick(time) {
     droneGain.gain.rampTo(0.4 + 1.2 * L, 0.6, time);
     if (k === 3) startRiser(time, beat);
     if (isHit) hitMoment(time, beat);
-    if (c % 4 === 0 && !cut) playPad(c, L, time);
+    
+if (c % 8 === 0 && !cut && !isHit) {
+  playPad(c, L, time);
+}
+
   }
 
   if (k === 3 && (step === 0 || step === 2)) snare.triggerAttackRelease("16n", time, 0.35 * DROP);
@@ -415,7 +496,7 @@ function tick(time) {
     // HUMO -> bajo (más fuerte donde la celda tiene más humo)
     const sm = tops.smoke[c][0];
     if (sm && groove && !(isHit && step === 0) && (step === 0 || (full && step === 3))) {
-      const n = pick(sm.row / grid.rows, -1, 1);
+      const n = notePlan[c].bass;
       lastLabel = n.label;
       bass.triggerAttackRelease(n.f, "8n", time, 0.95 * dyn(norm(sm.val)));
     }
@@ -425,7 +506,7 @@ function tick(time) {
     const active = full ? true : groove ? step % 2 === 0 : step === 0;
     if (notes.length && active && Math.random() < 0.3 + 0.7 * L) {
       const n = notes[(step + c) % notes.length];
-      const f = pick(n.row / grid.rows, 1, 2);
+      const f = notePlan[c].arp[(step + c) % notes.length];
       lastLabel = f.label;
       arp.triggerAttackRelease(f.f, "16n", time, Math.min(0.95, 0.95 * dyn(norm(n.val)) * (0.6 + 0.4 * L)));
     }
@@ -433,7 +514,7 @@ function tick(time) {
     // SULFATOS -> campanas (más fuertes donde la celda tiene más sulfato)
     const bl = tops.sulfate[c];
     if (bl.length && step === 2 && Math.random() < 0.35 + 0.5 * bl[0].val) {
-      const f = pick(bl[0].row / grid.rows, 2, 2);
+      const f = notePlan[c].bells;
       lastLabel = f.label;
       bells.triggerAttackRelease(f.f, "4n", time, 0.9 * dyn(norm(bl[0].val)));
     }
@@ -460,30 +541,50 @@ const PHASE_TXT = {
   "¡Entrada!": "¡Entrada! Pico de densidad del mapa; resuelve con 16:15 → 1:1.",
 };
 
+let lastCursorX = null;
 function draw(c, L = 0, hit = false, phase = "Calma") {
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  if (img && img.complete) ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  if (!grid || !ctx) return;
   const x = ((c + 0.5) / grid.cols) * cv.width;
+  if (PERFORMANCE.useStaticMapBackdrop) {
+    // El mapa está en CSS y no necesita copiar millones de píxeles con cada nota.
+    if (lastCursorX !== null) ctx.clearRect(lastCursorX - 6, 0, 14, cv.height);
+  } else {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (img && img.naturalWidth > 0) ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  }
   ctx.fillStyle = hit ? "rgba(255,210,90,.95)" : "rgba(255,255,255,.85)";
-  ctx.fillRect(x - 2, 0, hit ? 8 : 4, cv.height);
+  ctx.fillRect(x - (hit ? 4 : 2), 0, hit ? 8 : 4, cv.height);
+  lastCursorX = x;
   if (info) {
     const pr = presence.seasalt
       ? NAMES.map(n => `${SHORT[n]} ${Math.round(presence[n][c] * 100)}%`).join(" · ")
       : "";
-    info.textContent =
-      `${PHASE_TXT[phase]} · energía ${Math.round(L * 100)}% · presencia: ${pr} · último intervalo ${lastLabel}`;
+    info.textContent = `${PHASE_TXT[phase]} · energía ${Math.round(L * 100)}% · presencia: ${pr} · último intervalo ${lastLabel}`;
   }
 }
 
 // ---- Interruptor Estéreo / Espacial ----
 const modeBtn = document.getElementById("mode");
+let routeSerial = 0;
 function applyMode() {
-  for (const b of Object.values(buses)) {
-    b.outStereo.gain.rampTo(spatialMode ? 0 : 1, 0.3);
-    b.outSpatial.gain.rampTo(spatialMode ? SPATIAL_BOOST : 0, 0.3);
-  }
+  const routeVersion = ++routeSerial;
+  const switching = playing;
+  if (switching) outputGain.gain.rampTo(0, 0.025);
+  // Desconectar la rama inactiva reduce el trabajo de HRTF en vez de sólo silenciarla.
+  // Un único cambio de ruta por pulsación; no duplicamos el audio.
+  setTimeout(() => {
+    if (routeVersion !== routeSerial) return;
+    for (const b of Object.values(buses)) {
+      const to3D = spatialMode && !!b.spatial;
+      b.pumpGain.disconnect();
+      b.pumpGain.connect(to3D ? b.spatial : b.stereo);
+      b.outStereo.gain.value = to3D ? 0 : 1;
+      if (b.outSpatial) b.outSpatial.gain.value = to3D ? SPATIAL_BOOST : 0;
+    }
+    if (playing) outputGain.gain.rampTo(1, 0.075);
+  }, switching ? 35 : 0);
   if (modeBtn) {
-    modeBtn.textContent = spatialMode ? "Audio: Espacial 3D" : "Audio: Estéreo";
+    modeBtn.textContent = spatialMode ? (IS_LITE ? "Audio: Espacial ligero" : "Audio: Espacial 3D") : "Audio: Estéreo";
     modeBtn.setAttribute("aria-pressed", String(spatialMode));
   }
 }
@@ -521,56 +622,100 @@ soloBtns.forEach(b => b.onclick = () => {
 const rhythmEl = document.getElementById("rhythm");
 const dropEl = document.getElementById("drop");
 const dynEl = document.getElementById("dyn");
-if (rhythmEl) { RHYTHM = rhythmEl.value / 100; rhythmEl.oninput = () => { RHYTHM = rhythmEl.value / 100; }; }
+if (rhythmEl) { RHYTHM = rhythmEl.value / 100; RHYTHM = +RHYTHM; rhythmEl.oninput = () => { RHYTHM = rhythmEl.value / 100; }; }
 if (dropEl)   { DROP = dropEl.value / 100;     dropEl.oninput   = () => { DROP = dropEl.value / 100; }; }
 if (dynEl)    { DYN = dynEl.value / 100;       dynEl.oninput    = () => { DYN = dynEl.value / 100; }; }
 
-// ---- Arranque ----
-let started = false, playing = false;
+// ---- Inicio: esperar a que mapa y reverb estén listos ANTES de reproducir ----
+let started = false, playing = false, starting = false;
 const btn = document.getElementById("play");
 const status = document.getElementById("status");
 btn.disabled = true;
-status.textContent = "Cargando mapa?";
+if (status) status.textContent = "Preparando datos, instrumentos y reverberación…";
+
+let reverbReady = false;
+const readyPromise = (async () => {
+  const res = await fetch(MAP_GRID_PATH);
+  if (!res.ok) throw new Error(`No se pudo cargar ${MAP_GRID_PATH}: HTTP ${res.status}`);
+  grid = await res.json();
+  if (!Number.isInteger(grid.cols) || grid.cols < 1 || !Number.isInteger(grid.rows) || grid.rows < 1 || !grid.layers)
+    throw new Error("Formato inválido de data/grid.json");
+  for (const name of NAMES) if (!grid.layers[name] || grid.layers[name].length !== grid.rows)
+    throw new Error(`Capa inválida: ${name}`);
+
+  // Boot-time work only. Nothing here is repeated while the music plays.
+  precompute();
+  computePresence();
+  computeEnergy();
+  findHits();
+  buildLevels();
+  buildNotePlan();
+
+  const imagePromise = new Promise(resolve => {
+    img = new Image();
+    img.onload = () => {
+      if (PERFORMANCE.useStaticMapBackdrop) {
+        cv.style.backgroundImage = `url("${MAP_IMAGE_PATH}")`;
+        cv.style.backgroundSize = "100% 100%";
+        cv.style.backgroundPosition = "center";
+        cv.style.backgroundRepeat = "no-repeat";
+      }
+      resolve();
+    };
+    img.onerror = () => { console.warn("Imagen no cargada:", MAP_IMAGE_PATH); resolve(); };
+    img.src = MAP_IMAGE_PATH;
+  });
+  // Cargar la respuesta impulsional de la reverb una sola vez, antes de tocar.
+  const fxPromise = reverb.generate().then(() => { reverbReady = true; })
+    .catch(e => {
+      console.warn("No se pudo preparar la reverb; seguirá sin reverb:", e);
+      reverb.wet.value = 0;
+    });
+  await Promise.all([imagePromise, fxPromise]);
+  draw(0, level[0]);
+  applyMode();
+  applySolo();
+  btn.disabled = false;
+  if (status) status.textContent = `Listo · ${grid.cols} columnas preparadas${reverbReady ? " · reverb lista" : " · sin reverb"}. Pulsa Escuchar.`;
+})();
+readyPromise.catch(err => {
+  console.error(err);
+  if (status) status.textContent = `Error al preparar la experiencia: ${err.message}`;
+});
 
 btn.onclick = async () => {
-  if (!started) {
+  if (starting || btn.disabled) return;
+  starting = true;
+  btn.disabled = true;
+  try {
+    await readyPromise;
     await Tone.start();
-    await reverb.generate();
-    startDrone();
-    riser.start();
-    Tone.Transport.scheduleRepeat(tick, "16n");
-    started = true;
+    if (!started) {
+      startDrone();
+      riser.start();
+      Tone.Transport.scheduleRepeat(tick, "16n");
+      started = true;
+    }
+    playing = !playing;
+    if (playing) {
+      outputGain.gain.rampTo(1, 0.08);
+      Tone.Transport.start();
+    } else {
+      outputGain.gain.rampTo(0, 0.06);
+      Tone.Transport.pause();
+    }
+    btn.textContent = playing ? "Pausar" : "Escuchar";
+    if (status) status.textContent = playing ? "Sonando: barrido de oeste a este" : "En pausa";
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = `Error al iniciar audio: ${err.message}`;
+  } finally {
+    starting = false;
+    btn.disabled = false;
   }
-  playing = !playing;
-  if (playing) { Tone.Transport.start(); Tone.getDestination().mute = false; }
-  else         { Tone.Transport.pause(); Tone.getDestination().mute = true; }
-  btn.textContent = playing ? "Pausar" : "Escuchar";
-  status.textContent = playing ? "Sonando: barrido de oeste a este" : "En pausa";
 };
 
-(async () => {
-  try {
-    grid = await (await fetch("data/grid.json")).json();
-    precompute();
-    computePresence();
-    computeEnergy();
-    findHits();
-    buildLevels();
-    applyMode();
-    applySolo();
-    img = new Image();
-    img.onload = () => draw(0, level[0]);
-    img.src = "img/aerosols.jpg";
-    draw(0, level[0]);
-    btn.disabled = false;
-    status.textContent = "Mapa listo. Usa aud?fonos y pulsa Escuchar.";
-  } catch (e) {
-    console.error(e);
-    status.textContent = "No se pudo cargar el mapa (revisa data/grid.json e img/aerosols.jpg).";
-  }
-})();
-
-// ---- Grabaci?n ----
+// ---- Grabación ----
 const recorder = new Tone.Recorder();
 Tone.getDestination().connect(recorder);
 let recording = false;
@@ -587,8 +732,10 @@ recBtn.onclick = async () => {
     recording = false;
     recBtn.textContent = "Grabar";
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "musica-universalis-v8.webm";
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = "musica-universalis-v8-optimized.webm";
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
   }
 };
