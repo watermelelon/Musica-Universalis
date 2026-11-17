@@ -1752,7 +1752,7 @@ document.addEventListener('click',e=>{if(e.target.closest('#start-experience,#st
     // it needs to be able to resume when visitors switch back to Original.
     try{window.MUExplore?.pause();}catch{}
     if(typeof Tone!=='undefined'){
-      try{Tone.Transport.pause();Tone.getDestination().mute=next!=='original';}catch{}
+      try{Tone.Transport.pause();window.playing = false; Tone.getDestination().mute=next!=='original';}catch{}
     }
     if(epoch!==changing)return;
     report(next==='original'?'Original concert ready.':'Select Listen to hear this interpretation.');

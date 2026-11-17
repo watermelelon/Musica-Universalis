@@ -697,13 +697,11 @@ btn.onclick = async () => {
       started = true;
     }
     playing = !playing;
-    if (playing) {
-      outputGain.gain.rampTo(1, 0.08);
-      Tone.Transport.start();
-    } else {
-      outputGain.gain.rampTo(0, 0.06);
-      Tone.Transport.pause();
-    }
+if (playing) {
+  Tone.getDestination().mute = false;
+  outputGain.gain.rampTo(1, 0.08);
+  Tone.Transport.start();
+}
     btn.textContent = playing ? "Pausar" : "Escuchar";
     if (status) status.textContent = playing ? "Sonando: barrido de oeste a este" : "En pausa";
   } catch (err) {
@@ -752,4 +750,9 @@ Object.defineProperty(window, "playing", {
   configurable: true,
   get: () => playing,
   set: value => { playing = Boolean(value); }
+});
+
+Object.defineProperty(window, "grid", {
+  configurable: true,
+  get: () => grid
 });
